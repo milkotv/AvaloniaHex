@@ -5,8 +5,9 @@
         xmlns:avaloniaHex="clr-namespace:AvaloniaHex;assembly=AvaloniaHex"
         xmlns:rendering="clr-namespace:AvaloniaHex.Rendering;assembly=AvaloniaHex"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-        Width="1600"
-        Height="900"
+		WindowState="Maximized"
+        Width="800"
+        Height="600"
         x:Class="AvaloniaHex.Demo.MainWindow"
         Title="AvaloniaHex.Demo">
     <Window.Resources>
@@ -22,91 +23,29 @@
         </ResourceDictionary>
     </Window.Resources>
 
-    <DockPanel>
-        <Menu
-            DockPanel.Dock="Top">
-            <MenuItem Header="_File">
-                <MenuItem Header="_New (Dynamic)" Click="NewDynamicOnClick" HotKey="Ctrl+N" InputGesture="Ctrl+N"/>
-                <Separator />
-                <MenuItem Header="_Open (Dynamic)" Click="OpenDynamicOnClick" HotKey="Ctrl+O" InputGesture="Ctrl+O"/>
-                <MenuItem Header="Open (_Fixed)" Click="OpenFixedOnClick" HotKey="Ctrl+Alt+O" InputGesture="Ctrl+Alt+O" />
-                <MenuItem Header="Open (_MMIO)" Click="OpenMmioOnClick" HotKey="Ctrl+Shift+O" InputGesture="Ctrl+Shift+O"/>
-                <MenuItem Header="Open E_xample">
-                    <MenuItem Header="AvaloniaHex.Demo.exe" Click="AvaloniaHexDemoOnClick" />
-                    <MenuItem Header="Segmented Document" Click="SegmentedDocumentOnClick" />
-                    <MenuItem Header="Real Time Changing Document" Click="RealTimeChangingDocumentOnClick" />
-                </MenuItem>
-                <Separator />
-                <MenuItem Header="_Save" Click="SaveOnClick" HotKey="Ctrl+S" InputGesture="Ctrl+S"/>
-                <MenuItem Header="Save _As" Click="SaveAsOnClick" HotKey="Ctrl+S" InputGesture="Ctrl+Shift+S"/>
-            </MenuItem>
-            <MenuItem Header="_Edit">
-                <MenuItem Header="Fill With Zeroes" Click="OnFillWithZeroesOnClick"/>
-            </MenuItem>
-            <MenuItem Header="_View">
-                <MenuItem Header="Toggle _Uppercase" Click="UppercaseOnClick"/>
-                <MenuItem Header="Theme">
-                    <MenuItem Header="System Theme" Click="SystemThemeOnClick"/>
-                    <MenuItem Header="Light" Click="LightThemeOnClick"/>
-                    <MenuItem Header="Dark" Click="DarkThemeOnClick"/>
-                </MenuItem>
-                <MenuItem Header="Font Size">
-                    <MenuItem Header="10" Click="FontSizeOnClick" CommandParameter="10"/>
-                    <MenuItem Header="11" Click="FontSizeOnClick" CommandParameter="11"/>
-                    <MenuItem Header="12" Click="FontSizeOnClick" CommandParameter="12"/>
-                    <MenuItem Header="14" Click="FontSizeOnClick" CommandParameter="14"/>
-                    <MenuItem Header="20" Click="FontSizeOnClick" CommandParameter="20"/>
-                    <MenuItem Header="24" Click="FontSizeOnClick" CommandParameter="24"/>
-                </MenuItem>
-                <MenuItem Header="Bytes Per Line">
-                    <MenuItem Header="Adjust to Width" Click="AdjustOnClick"/>
-                    <Separator />
-                    <MenuItem Header="8"  Click="AdjustOnClick" CommandParameter="8"/>
-                    <MenuItem Header="16" Click="AdjustOnClick" CommandParameter="16"/>
-                    <MenuItem Header="24" Click="AdjustOnClick" CommandParameter="24"/>
-                    <MenuItem Header="32" Click="AdjustOnClick" CommandParameter="32"/>
-                    <MenuItem Header="64" Click="AdjustOnClick" CommandParameter="64"/>
-                </MenuItem>
-                <MenuItem Header="Column Padding">
-                    <MenuItem Header="10"  Click="ColumnPaddingOnClick" CommandParameter="10"/>
-                    <MenuItem Header="20" Click="ColumnPaddingOnClick" CommandParameter="20"/>
-                    <MenuItem Header="30" Click="ColumnPaddingOnClick" CommandParameter="30"/>
-                    <MenuItem Header="40" Click="ColumnPaddingOnClick" CommandParameter="40"/>
-                    <MenuItem Header="50" Click="ColumnPaddingOnClick" CommandParameter="50"/>
-                </MenuItem>
-                <MenuItem Header="Columns">
-                    <MenuItem Header="Offset" Click="OffsetOnClick" ToggleType="CheckBox" IsChecked="True" />
-                    <MenuItem Header="Hex" Click="HexOnClick" ToggleType="CheckBox" IsChecked="True" />
-                    <MenuItem Header="Binary" Click="BinaryOnClick" ToggleType="CheckBox" IsChecked="False" />
-                    <MenuItem Header="ASCII" Click="AsciiOnClick" ToggleType="CheckBox" IsChecked="True" />
-                </MenuItem>
-                <MenuItem Header="Highlighting">
-                    <MenuItem Header="Changes" Click="ChangesOnClick"/>
-                    <MenuItem Header="Zeroes" Click="ZeroesOnClick"/>
-                    <MenuItem Header="Invalid Ranges" Click="InvalidOnClick"/>
-                </MenuItem>
-            </MenuItem>
-        </Menu>
+    <StackPanel>
 
-        <StackPanel
-            DockPanel.Dock="Bottom"
-            Orientation="Horizontal">
+        <StackPanel Orientation="Horizontal">
             <Label x:Name="ModeLabel" Content="Overwrite"/>
             <Separator />
             <Label x:Name="StatusLabel" />
         </StackPanel>
 
         <avaloniaHex:HexEditor
+			MinHeight="20" MinWidth="300"
+            HorizontalAlignment="Center" VerticalAlignment="Center"
             x:Name="MainHexEditor"
+            CanResize="False"
+            ReplacementByteOnRemove="FF"
             BorderBrush="{DynamicResource MainBorderBrush}"
             BorderThickness="1"
             FontSize="14"
             FontFamily="{StaticResource SourceCodeProFont}">
             <avaloniaHex:HexEditor.Columns>
-                <rendering:OffsetColumn />
+                <rendering:OffsetColumn IsVisible="False"/>
                 <rendering:HexColumn />
                 <rendering:BinaryColumn IsVisible="False" />
-                <rendering:AsciiColumn InvalidCellChar="?" />
+                <rendering:AsciiColumn InvalidCellChar="?" IsVisible="True"/>
             </avaloniaHex:HexEditor.Columns>
             <avaloniaHex:HexEditor.ContextMenu>
                 <ContextMenu>
@@ -115,5 +54,5 @@
             </avaloniaHex:HexEditor.ContextMenu>
         </avaloniaHex:HexEditor>
 
-    </DockPanel>
+    </StackPanel>
 </Window>

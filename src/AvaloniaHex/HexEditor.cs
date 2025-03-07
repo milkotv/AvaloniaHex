@@ -7,6 +7,7 @@ using Avalonia.Media;
 using AvaloniaHex.Document;
 using AvaloniaHex.Editing;
 using AvaloniaHex.Rendering;
+using System.Text.RegularExpressions;
 
 namespace AvaloniaHex;
 
@@ -146,6 +147,63 @@ public class HexEditor : TemplatedControl
     /// </summary>
     public HexView.ColumnCollection Columns => HexView.Columns;
 
+    /// <summary>
+    /// Gets a value indicating that instead of removing, the byte should be replaced insted with this one.
+    /// </summary>   
+    public static readonly StyledProperty<string> ReplacementByteOnRemoveProperty =
+        AvaloniaProperty.Register<HexEditor, string>(nameof(ReplacementByteOnRemove), "00");
+
+    /// <summary>
+    /// Gets or sets the binary document that is currently being displayed.
+    /// </summary>
+    public string ReplacementByteOnRemove
+    {
+        get => GetValue(ReplacementByteOnRemoveProperty);
+        set
+        {
+            if (!string.IsNullOrEmpty(value) && Regex.IsMatch(value, "^[0-9a-fA-F]{2}$"))
+                SetValue(ReplacementByteOnRemoveProperty, value);
+            else
+                throw new ArgumentException("ReplacementByteOnRemove is not 2 HEX characters!");
+        }
+    }
+
+    /// <summary>
+    /// Gets a value indicating that instead of removing, the byte should be replaced insted with this one.
+    /// </summary>   
+    public static readonly StyledProperty<bool> CanResizeProperty =
+        AvaloniaProperty.Register<HexEditor, bool>(nameof(CanResize), true);
+
+    /// <summary>
+    /// Gets or sets the binary document that is currently being displayed.
+    /// </summary>
+    public bool CanResize
+    {
+        get => GetValue(CanResizeProperty);
+        set
+        {
+            if(!value)
+                Caret.Mode = EditingMode.Overwrite;
+            SetValue(CanResizeProperty, value);
+        }
+    }
+
+
+    /// <summary>
+    /// Gets a value indicating if (in case of !CanResize) the Caret needs to rotate to the beining if reacues the end.
+    /// </summary>   
+    public static readonly StyledProperty<bool> IsCyclicProperty =
+        AvaloniaProperty.Register<HexEditor, bool>(nameof(IsCyclic), true);
+
+    /// <summary>
+    /// Gets or sets if (in case of !CanResize) the Caret needs to rotate to the beining if reacues the end.
+    /// </summary>
+    public bool IsCyclic
+    {
+        get => GetValue(IsCyclicProperty);
+        set => SetValue(IsCyclicProperty, value);
+    }
+
     /// <inheritdoc />
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
@@ -203,6 +261,13 @@ public class HexEditor : TemplatedControl
                 Caret.PrimaryColumnIndex = column.Index;
                 if (HexView.GetLocationByPoint(position) is { } location)
                 {
+                    // Do not allow to go boyond if !CanResize
+                    if(IsOverflow(location.ByteIndex))
+                    {
+                        e.Handled = true;
+                        return;
+                    }
+
                     // Update selection when holding down the shift key.
                     bool isShiftDown = (e.KeyModifiers & KeyModifiers.Shift) != 0;
                     if (isShiftDown)
@@ -243,6 +308,12 @@ public class HexEditor : TemplatedControl
             var position = e.GetPosition(HexView);
             if (HexView.GetLocationByPoint(position, column) is { } location)
             {
+                if (IsOverflow(location.ByteIndex))
+                {
+                    e.Handled = true;
+                    return;
+                }
+
                 Selection.Range = new BitRange(
                     location.Min(anchorPoint).AlignDown(),
                     location.Max(anchorPoint).NextOrMax().AlignUp()
@@ -363,8 +434,18 @@ public class HexEditor : TemplatedControl
                 break;
 
             case Key.Right:
+                if (IsOverflow(oldLocation.ByteIndex + 1))
+                {
+                    if (IsCyclic)
+                    {
+                        Caret.GoToStartOfLine();
+                        UpdateSelection(oldLocation, isShiftDown);
+                    }
+                    e.Handled = true;
+                    return;
+                }                
                 Caret.GoRight();
-                UpdateSelection(oldLocation, isShiftDown);
+                UpdateSelection(oldLocation, isShiftDown);                
                 break;
 
             case Key.Down when (e.KeyModifiers & KeyModifiers.Control) != 0:
@@ -386,7 +467,7 @@ public class HexEditor : TemplatedControl
                 break;
 
             case Key.Insert:
-                Caret.Mode = Caret.Mode == EditingMode.Overwrite
+                Caret.Mode = Caret.Mode == EditingMode.Overwrite && CanResize == true
                     ? EditingMode.Insert
                     : EditingMode.Overwrite;
                 break;
@@ -455,10 +536,19 @@ public class HexEditor : TemplatedControl
         if (Caret.PrimaryColumn is not { } column)
             return;
 
+        var selectionRange = Selection.Range;
+
+        if (Document != null && !CanResize)        
+        {
+            byte[] buffer = new byte[selectionRange.ByteLength];
+
+            Array.Fill(buffer, Convert.ToByte(ReplacementByteOnRemove, 16)); 
+            Document.WriteBytes(selectionRange.Start.ByteIndex, buffer);
+            return;
+        }
+
         if (Document is not {CanRemove: true} document)
             return;
-
-        var selectionRange = Selection.Range;
 
         document.RemoveBytes(selectionRange.Start.ByteIndex, selectionRange.ByteLength);
 
@@ -475,10 +565,19 @@ public class HexEditor : TemplatedControl
         if (Caret.PrimaryColumn is not { } column)
             return;
 
-        if (Document is not {CanRemove: true} document)
-            return;
-
         var selectionRange = Selection.Range;
+
+        if (Document != null && !CanResize)
+        {
+            byte[] buffer = new byte[selectionRange.ByteLength];
+
+            Array.Fill(buffer, Convert.ToByte(ReplacementByteOnRemove, 16));
+            Document.WriteBytes(selectionRange.Start.ByteIndex, buffer);
+            return;
+        }
+
+        if (Document is not { CanRemove: true } document)
+            return;
 
         if (selectionRange.ByteLength <= 1)
         {
@@ -528,6 +627,9 @@ public class HexEditor : TemplatedControl
             );
         }
     }
+
+    private bool IsOverflow(ulong byteIndex) => 
+        !CanResize && Document != null && byteIndex >= Document.ValidRanges.EnclosingRange.ByteLength;
 
     /// <inheritdoc />
     protected override void OnGotFocus(GotFocusEventArgs e)

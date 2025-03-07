@@ -60,10 +60,11 @@ namespace AvaloniaHex.Demo
             MainHexEditor.Caret.ModeChanged += CaretOnModeChanged;
         }
 
-        protected override async void OnLoaded(RoutedEventArgs e)
+        protected override void OnLoaded(RoutedEventArgs e)
         {
             base.OnLoaded(e);
-            await OpenFileAsDynamicBuffer(typeof(MainWindow).Assembly.Location);
+            OpenEmptyDynamicBuffer();
+            //OpenEmptyLargeStaticBuffer(1024);
         }
 
         private void NewDynamicOnClick(object? sender, RoutedEventArgs e)
@@ -87,6 +88,35 @@ namespace AvaloniaHex.Demo
             catch (Exception ex)
             {
                 StatusLabel.Content = $"Failed to read file: {ex.Message}";
+            }
+        }
+
+        private void OpenEmptyDynamicBuffer()
+        {
+            try
+            {
+                MainHexEditor.Document = new DynamicBinaryDocument(Convert.FromHexString("CAFEBABE"));
+                StatusLabel.Content = $"Opened empty buffer.";
+                Title = $"Empty Dynamic Buffer - AvaloniaHex.Demo";
+            }
+            catch (Exception ex)
+            {
+                StatusLabel.Content = $"Failed to create empty buffer ({ex.Message})";
+            }
+        }
+
+        private void OpenEmptyLargeStaticBuffer(ulong size)
+        {
+            try
+            {
+                MainHexEditor.Document = new MemoryBinaryDocument(new byte[size]);
+                MainHexEditor.Caret.Mode = EditingMode.Insert;
+                StatusLabel.Content = $"Opened empty buffer.";
+                Title = $"Empty Static Buffer - AvaloniaHex.Demo";
+            }
+            catch (Exception ex)
+            {
+                StatusLabel.Content = $"Failed to create empty buffer ({ex.Message})";
             }
         }
 

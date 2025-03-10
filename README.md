@@ -1,4 +1,5 @@
 # AvaloniaHex
+This clone is not pretending to be beautiful and is an experimentation for nich cases!
 
 This is a(n experimental) hex editor control for the [Avalonia](https://github.com/AvaloniaUI/Avalonia) UI framework.
 

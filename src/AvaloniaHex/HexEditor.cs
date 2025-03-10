@@ -8,6 +8,7 @@ using AvaloniaHex.Document;
 using AvaloniaHex.Editing;
 using AvaloniaHex.Rendering;
 using System;
+using System.Data.Common;
 using System.Text.RegularExpressions;
 
 namespace AvaloniaHex;
@@ -362,10 +363,29 @@ public class HexEditor : TemplatedControl
             }
         }
 
+        // Allow fill when > 1 b selected and not resizable
+        if (!CanResize && Selection.Range.ByteLength > 1)
+        {
+            FillSelection(e.Text);
+            UpdateSelection(Caret.Location, false);
+            return;
+        }
+
         // Dispatch text input to the primary column.
         var location = Caret.Location;
         if (!Caret.PrimaryColumn.HandleTextInput(ref location, e.Text, Caret.Mode))
             return;
+
+        // Do not allow resizing and go to the begining if cyclic
+        if (!CanResize && IsOverflow(location.ByteIndex) && location.BitIndex == 4)
+        {
+            if (IsCyclic)
+            {
+                Caret.GoToStartOfLine();
+                UpdateSelection(location, false);
+            }
+            return;
+        }
 
         // Update caret location.
         Caret.Location = location;
@@ -568,12 +588,7 @@ public class HexEditor : TemplatedControl
         if (!CanResize)
         {
             if (selectionRange.ByteLength > 1)
-            {
-                var buffer = new byte[selectionRange.ByteLength];
-                Array.Fill(buffer, Convert.ToByte($"{FillChar}{FillChar}", 16));
-                Document.WriteBytes(selectionRange.Start.ByteIndex, buffer);
-                Caret.Location = new BitLocation(0, column.FirstBitIndex);
-            }
+                FillSelection(FillChar);
             else
             {
                 var location = Caret.Location;
@@ -606,10 +621,7 @@ public class HexEditor : TemplatedControl
         {
             if (selectionRange.ByteLength > 1)
             {
-                var buffer = new byte[selectionRange.ByteLength];
-                Array.Fill(buffer, Convert.ToByte($"{FillChar}{FillChar}", 16));
-                Document.WriteBytes(selectionRange.Start.ByteIndex, buffer);
-                Caret.Location = new BitLocation(0, column.FirstBitIndex);
+                FillSelection(FillChar);
                 return;
             }
             else
@@ -681,6 +693,26 @@ public class HexEditor : TemplatedControl
     private bool IsOverflow(ulong byteIndex) => 
         !CanResize && Document != null && byteIndex >= Document.ValidRanges.EnclosingRange.ByteLength;
 
+    private void FillSelection(string fill)
+    {
+        if (string.IsNullOrEmpty(fill))
+            return;
+
+        if (Caret.PrimaryColumn is not { } column)
+            return;
+
+        if (Document is not { IsReadOnly: false} document)
+            return;
+
+        var charToFill = fill[0];
+        var selectionRange = Selection.Range;
+        var buffer = new byte[selectionRange.ByteLength];
+
+        Array.Fill(buffer, Convert.ToByte($"{charToFill}{charToFill}", 16));
+        document.WriteBytes(selectionRange.Start.ByteIndex, buffer);
+
+        Caret.Location = new BitLocation(selectionRange.Start.ByteIndex, column.FirstBitIndex);
+    }
     /// <inheritdoc />
     protected override void OnGotFocus(GotFocusEventArgs e)
     {

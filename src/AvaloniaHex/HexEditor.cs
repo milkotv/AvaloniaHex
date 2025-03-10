@@ -7,6 +7,7 @@ using Avalonia.Media;
 using AvaloniaHex.Document;
 using AvaloniaHex.Editing;
 using AvaloniaHex.Rendering;
+using System;
 using System.Text.RegularExpressions;
 
 namespace AvaloniaHex;
@@ -150,21 +151,21 @@ public class HexEditor : TemplatedControl
     /// <summary>
     /// Gets a value indicating that instead of removing, the byte should be replaced insted with this one.
     /// </summary>   
-    public static readonly StyledProperty<string> ReplacementByteOnRemoveProperty =
-        AvaloniaProperty.Register<HexEditor, string>(nameof(ReplacementByteOnRemove), "00");
+    public static readonly StyledProperty<string> FillCharProperty =
+        AvaloniaProperty.Register<HexEditor, string>(nameof(FillChar), "0");
 
     /// <summary>
     /// Gets or sets the binary document that is currently being displayed.
     /// </summary>
-    public string ReplacementByteOnRemove
+    public string FillChar
     {
-        get => GetValue(ReplacementByteOnRemoveProperty);
+        get => GetValue(FillCharProperty);
         set
         {
-            if (!string.IsNullOrEmpty(value) && Regex.IsMatch(value, "^[0-9a-fA-F]{2}$"))
-                SetValue(ReplacementByteOnRemoveProperty, value);
+            if (!string.IsNullOrEmpty(value) && Regex.IsMatch(value, "^[0-9a-fA-F]$"))
+                SetValue(FillCharProperty, value);
             else
-                throw new ArgumentException("ReplacementByteOnRemove is not 2 HEX characters!");
+                throw new ArgumentException("FillChar must be 1 HEX character");
         }
     }
 
@@ -536,21 +537,29 @@ public class HexEditor : TemplatedControl
         if (Caret.PrimaryColumn is not { } column)
             return;
 
+        if (Document is not { CanRemove: true } document)
+            return;
+
         var selectionRange = Selection.Range;
-
-        if (Document != null && !CanResize)        
+        if (!CanResize)
         {
-            byte[] buffer = new byte[selectionRange.ByteLength];
-
-            Array.Fill(buffer, Convert.ToByte(ReplacementByteOnRemove, 16)); 
-            Document.WriteBytes(selectionRange.Start.ByteIndex, buffer);
+            if (selectionRange.ByteLength > 1)
+            {
+                var buffer = new byte[selectionRange.ByteLength];
+                Array.Fill(buffer, Convert.ToByte($"{FillChar}{FillChar}", 16));
+                Document.WriteBytes(selectionRange.Start.ByteIndex, buffer);
+                Caret.Location = new BitLocation(0, column.FirstBitIndex);
+            }
+            else
+            {
+                var location = Caret.Location;
+                if (Caret.PrimaryColumn.HandleTextInput(ref location, FillChar, EditingMode.Overwrite))
+                    Caret.Location = location;
+            }
             return;
         }
-
-        if (Document is not {CanRemove: true} document)
-            return;
-
-        document.RemoveBytes(selectionRange.Start.ByteIndex, selectionRange.ByteLength);
+        else
+            document.RemoveBytes(selectionRange.Start.ByteIndex, selectionRange.ByteLength);
 
         Caret.Location = new BitLocation(selectionRange.Start.ByteIndex, column.FirstBitIndex);
         Selection.Range = Caret.Location.ToSingleByteRange();
@@ -565,19 +574,27 @@ public class HexEditor : TemplatedControl
         if (Caret.PrimaryColumn is not { } column)
             return;
 
-        var selectionRange = Selection.Range;
-
-        if (Document != null && !CanResize)
-        {
-            byte[] buffer = new byte[selectionRange.ByteLength];
-
-            Array.Fill(buffer, Convert.ToByte(ReplacementByteOnRemove, 16));
-            Document.WriteBytes(selectionRange.Start.ByteIndex, buffer);
-            return;
-        }
-
         if (Document is not { CanRemove: true } document)
             return;
+
+        var selectionRange = Selection.Range;
+        if (!CanResize)
+        {
+            if (selectionRange.ByteLength > 1)
+            {
+                var buffer = new byte[selectionRange.ByteLength];
+                Array.Fill(buffer, Convert.ToByte($"{FillChar}{FillChar}", 16));
+                Document.WriteBytes(selectionRange.Start.ByteIndex, buffer);
+                Caret.Location = new BitLocation(0, column.FirstBitIndex);
+                return;
+            }
+            else
+            {
+                var _ = Caret.Location;
+                if (!Caret.PrimaryColumn.HandleTextInput(ref _, FillChar, EditingMode.Overwrite))
+                    return;
+            }
+        }       
 
         if (selectionRange.ByteLength <= 1)
         {
@@ -587,14 +604,21 @@ public class HexEditor : TemplatedControl
                 // In this case, we can only perform the deletion if we're not at the beginning of the document.
                 if (selectionRange.Start.ByteIndex != 0)
                 {
-                    document.RemoveBytes(selectionRange.Start.ByteIndex - 1, 1);
-                    Caret.Location = new BitLocation(selectionRange.Start.ByteIndex - 1, column.FirstBitIndex);
+                    if (CanResize)
+                    {
+                        document.RemoveBytes(selectionRange.Start.ByteIndex - 1, 1);
+                        Caret.Location = new BitLocation(selectionRange.Start.ByteIndex - 1, column.FirstBitIndex);
+                    }
+                    else
+                        Caret.Location = new BitLocation(selectionRange.Start.ByteIndex - 1, 0);
                 }
             }
             else
             {
                 // If caret is not at a left-most cell of a byte, it is more intuitive to have it remove the current byte.
-                document.RemoveBytes(selectionRange.Start.ByteIndex, 1);
+                if (CanResize)
+                    document.RemoveBytes(selectionRange.Start.ByteIndex, 1);
+
                 Caret.Location = selectionRange.Start.ByteIndex == 0
                     ? new BitLocation(0, column.FirstBitIndex)
                     : new BitLocation(selectionRange.Start.ByteIndex, column.FirstBitIndex);
@@ -603,7 +627,9 @@ public class HexEditor : TemplatedControl
         else
         {
             // Otherwise, simply treat as a normal delete.
-            document.RemoveBytes(selectionRange.Start.ByteIndex, selectionRange.ByteLength);
+            if (CanResize)
+                document.RemoveBytes(selectionRange.Start.ByteIndex, selectionRange.ByteLength);
+
             Caret.Location = new BitLocation(selectionRange.Start.ByteIndex, column.FirstBitIndex);
         }
 

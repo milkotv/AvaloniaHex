@@ -36,7 +36,7 @@
             HorizontalAlignment="Center" VerticalAlignment="Center"
             x:Name="MainHexEditor"
             CanResize="False"
-            ReplacementByteOnRemove="FF"
+            FillChar="F"
             BorderBrush="{DynamicResource MainBorderBrush}"
             BorderThickness="1"
             FontSize="14"

@@ -412,6 +412,12 @@ public class HexEditor : TemplatedControl
                 break;
 
             case Key.Left:
+                if (IsCyclic && oldLocation.ByteIndex == 0 && oldLocation.BitIndex == 4)
+                {
+                    Caret.GoToEndOfLine();
+                    UpdateSelection(oldLocation, isShiftDown);
+                    return;
+                }
                 Caret.GoLeft();
                 UpdateSelection(oldLocation, isShiftDown);
                 break;
@@ -423,7 +429,7 @@ public class HexEditor : TemplatedControl
                 );
                 break;
 
-            case Key.Up:
+            case Key.Up:                
                 Caret.GoUp();
                 UpdateSelection(oldLocation, isShiftDown);
                 break;
@@ -435,14 +441,13 @@ public class HexEditor : TemplatedControl
                 break;
 
             case Key.Right:
-                if (IsOverflow(oldLocation.ByteIndex + 1))
+                if (!CanResize && IsOverflow(oldLocation.ByteIndex + 1) && oldLocation.BitIndex == 0)
                 {
                     if (IsCyclic)
                     {
                         Caret.GoToStartOfLine();
                         UpdateSelection(oldLocation, isShiftDown);
                     }
-                    e.Handled = true;
                     return;
                 }                
                 Caret.GoRight();
@@ -457,11 +462,30 @@ public class HexEditor : TemplatedControl
                 break;
 
             case Key.Down:
+                if (!CanResize)
+                {
+                    if (IsCyclic)
+                    {
+                        Caret.GoToEndOfLine();
+                        UpdateSelection(oldLocation, isShiftDown);
+                    }
+                    return;
+                }
                 Caret.GoDown();
                 UpdateSelection(oldLocation, isShiftDown);
                 break;
 
             case Key.PageDown:
+                if (!CanResize)
+                {
+                    if (IsCyclic)
+                    {
+                        Caret.GoToEndOfLine();
+                        UpdateSelection(oldLocation, isShiftDown);
+                    }
+                    e.Handled = true;
+                    return;
+                }
                 Caret.GoPageDown();
                 UpdateSelection(oldLocation, isShiftDown);
                 e.Handled = true;

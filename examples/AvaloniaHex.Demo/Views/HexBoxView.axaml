@@ -1,0 +1,35 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+			 xmlns:avaloniaHex="clr-namespace:AvaloniaHex;assembly=AvaloniaHex"
+			 xmlns:rendering="clr-namespace:AvaloniaHex.Rendering;assembly=AvaloniaHex"
+             x:Class="AvaloniaHex.Demo.Views.HexBoxView">
+
+	<Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*" MinWidth="200">
+
+		<avaloniaHex:HexEditor MinHeight="20"
+			HorizontalAlignment="Stretch"
+			VerticalAlignment="Stretch"			
+			x:Name="HexBox"
+			BorderBrush="{DynamicResource MainBorderBrush}"
+			BorderThickness="1"
+			FontSize="14"
+			FontFamily="{StaticResource SourceCodeProFont}">
+			<avaloniaHex:HexEditor.Columns>
+				<rendering:OffsetColumn IsVisible="False"/>
+				<rendering:HexColumn />
+				<rendering:BinaryColumn IsVisible="False" />
+				<rendering:AsciiColumn InvalidCellChar="?" IsVisible="False"/>
+			</avaloniaHex:HexEditor.Columns>			
+		</avaloniaHex:HexEditor>
+
+		<Grid Name="StatusLine" Grid.Row="1">
+			<TextBlock Name="ModeLabel" HorizontalAlignment="Left"/>
+			<TextBlock Name="SelectionLabel" HorizontalAlignment="Center"/>
+			<TextBlock Name="OffsetLabel" HorizontalAlignment="Right"/>					
+		</Grid>
+	</Grid>
+	
+</UserControl>

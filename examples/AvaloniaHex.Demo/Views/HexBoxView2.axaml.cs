@@ -34,20 +34,20 @@ namespace AvaloniaHex.Demo.Views
             };
 
             // Enable the changes highlighter.
-            HexBox2.HexView.LineTransformers.Add(_changesHighlighter);
-            HexBox2.HexView.LineTransformers.Add(_invalidRangesHighlighter);
+            HexBoxExt.HexView.LineTransformers.Add(_changesHighlighter);
+            HexBoxExt.HexView.LineTransformers.Add(_invalidRangesHighlighter);
 
             // Divide each 8 bytes with a dashed line and separate colors.
-            var layer = HexBox2.HexView.Layers.Get<CellGroupsLayer>();
+            var layer = HexBoxExt.HexView.Layers.Get<CellGroupsLayer>();
             layer.BytesPerGroup = 8;
             layer.Backgrounds.Add(new SolidColorBrush(Colors.Gray, 0.1D));
             layer.Backgrounds.Add(null);
             layer.Border = new Pen(Brushes.Gray, dashStyle: DashStyle.Dash);
 
-            HexBox2.DocumentChanged += HexBoxOnDocumentChanged;
-            HexBox2.Selection.RangeChanged += SelectionOnRangeChanged;
-            HexBox2.Caret.ModeChanged += CaretOnModeChanged;
-            HexBox2.Caret.LocationChanged += CaretOnLocationChanged;
+            HexBoxExt.DocumentChanged += HexBoxOnDocumentChanged;
+            HexBoxExt.Selection.RangeChanged += SelectionOnRangeChanged;
+            HexBoxExt.Caret.ModeChanged += CaretOnModeChanged;
+            HexBoxExt.Caret.LocationChanged += CaretOnLocationChanged;
 
             this.GetObservable(TextProperty)
               .Subscribe(x => UpdateText(x));
@@ -57,12 +57,12 @@ namespace AvaloniaHex.Demo.Views
 
             this.GetObservable(BytesPerLineProperty)
                 .Where(x => x > 0)
-                .Subscribe(x => HexBox2.HexView.BytesPerLine = (int?)x);
+                .Subscribe(x => HexBoxExt.HexView.BytesPerLine = (int?)x);
 
             this.GetObservable(BytesNumProperty)
                 .Subscribe(x =>
                 {
-                    HexBox2.CanResize = x == 0;
+                    HexBoxExt.CanResize = x == 0;
                     UpdateBytesNum(x);
                 });
 
@@ -71,7 +71,7 @@ namespace AvaloniaHex.Demo.Views
                 .Subscribe(x => _document!.IsReadOnly = x);
 
             this.GetObservable(IsCyclicProperty)
-              .Subscribe(x => HexBox2.IsCyclic = x);
+              .Subscribe(x => HexBoxExt.IsCyclic = x);
 
             this.GetObservable(IsModeLabelVisibleProperty)
                 .Subscribe(_ => UpdateLabels());
@@ -193,8 +193,8 @@ namespace AvaloniaHex.Demo.Views
         protected override void OnLoaded(RoutedEventArgs e)
         {
             base.OnLoaded(e);           
-            HexBox2.Document = new DynamicBinaryDocument();
-            HexBox2.Caret.Mode = EditingMode.Insert;
+            HexBoxExt.Document = new DynamicBinaryDocument();
+            HexBoxExt.Caret.Mode = EditingMode.Insert;
 
             // Create the document first!
             UpdateText(Text);
@@ -206,7 +206,7 @@ namespace AvaloniaHex.Demo.Views
         private void UpdateText(string hex)
         {
             _document = new DynamicBinaryDocument(Convert.FromHexString((hex ?? string.Empty)));
-            HexBox2.HexView.Document = _document;
+            HexBoxExt.HexView.Document = _document;
         }
 
         /// <summary>
@@ -222,7 +222,7 @@ namespace AvaloniaHex.Demo.Views
             if (bytesNum > _document.Length)
             {
                 var padding = new byte[bytesNum - _document.Length];
-                Array.Fill(padding, Convert.ToByte(HexBox2.FillChar.ToString(), 16));
+                Array.Fill(padding, Convert.ToByte(HexBoxExt.FillChar.ToString(), 16));
                 _document.InsertBytes(_document.Length, padding);
             }
             else if (bytesNum < _document.Length)
@@ -236,7 +236,7 @@ namespace AvaloniaHex.Demo.Views
         private void ToggleColumn<TColumn>(bool isVisible)
             where TColumn : Column
         {
-            var column = HexBox2.Columns.Get<TColumn>();
+            var column = HexBoxExt.Columns.Get<TColumn>();
             column.IsVisible = isVisible;
         }
 
@@ -253,7 +253,7 @@ namespace AvaloniaHex.Demo.Views
 
         private void DocumentOnChanged(object? sender, BinaryDocumentChange change)
         {
-            Debug.Print($"HexBox: {HexBox2.Width}, {HexBox2.Height}");
+            Debug.Print($"HexBox: {HexBoxExt.Width}, {HexBoxExt.Height}");
 
             var doc = (sender as IBinaryDocument)!;
             switch (change.Type)
@@ -280,15 +280,15 @@ namespace AvaloniaHex.Demo.Views
             BytesLabel.IsVisible = IsBytesLabelVisible;
             if (IsBytesLabelVisible)
             {
-                if (HexBox2.Selection.Range.ByteLength > 1)
-                    BytesLabel.Text = $"Selected {HexBox2.Selection.Range.ByteLength} bytes [{HexBox2.Selection.Range.Start.ByteIndex + 1} - {HexBox2.Selection.Range.End.ByteIndex}]";
+                if (HexBoxExt.Selection.Range.ByteLength > 1)
+                    BytesLabel.Text = $"Selected {HexBoxExt.Selection.Range.ByteLength} bytes [{HexBoxExt.Selection.Range.Start.ByteIndex + 1} - {HexBoxExt.Selection.Range.End.ByteIndex}]";
                 else
-                    BytesLabel.Text = $"Byte {HexBox2.Caret.Location.ByteIndex + 1}/{Math.Max(HexBox2.Document!.Length, HexBox2.Caret.Location.ByteIndex + 1)}";
+                    BytesLabel.Text = $"Byte {HexBoxExt.Caret.Location.ByteIndex + 1}/{Math.Max(HexBoxExt.Document!.Length, HexBoxExt.Caret.Location.ByteIndex + 1)}";
             }
 
             ModeLabel.IsVisible = IsModeLabelVisible;
             if (IsModeLabelVisible)
-                ModeLabel.Text = HexBox2.Caret.Mode == EditingMode.Insert ? "INS" : "OVR";
+                ModeLabel.Text = HexBoxExt.Caret.Mode == EditingMode.Insert ? "INS" : "OVR";
         }
     }
 }

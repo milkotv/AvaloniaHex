@@ -1,23 +1,22 @@
 ﻿using Avalonia.Input;
 using Avalonia.Interactivity;
-using AvaloniaHex.Demo.Extensions;
 using AvaloniaHex.Document;
 using AvaloniaHex.Editing;
+using AvaloniaHex.Extensions;
 using AvaloniaHex.Rendering;
-using System;
 using System.ComponentModel.DataAnnotations;
 
-namespace AvaloniaHex.Demo.Controls;
+namespace AvaloniaHex;
 
 /// <summary>
 /// A control that allows for displaying and editing binary data in columns.
 /// </summary>
-public class HexEditor2 : HexEditor
+public class HexEditorExt : HexEditor
 {
     /// <summary>
     /// Creates a new empty modified hex editor.
     /// </summary>
-    public HexEditor2() : base()
+    public HexEditorExt() : base()
     {
         AddHandler(KeyDownEvent, OnPreviewKeyDown, RoutingStrategies.Tunnel);
     }

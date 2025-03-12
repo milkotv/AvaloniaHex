@@ -3,5 +3,6 @@
     <ResourceDictionary.MergedDictionaries>
         <ResourceInclude Source="/HexEditor.axaml" />
 		<ResourceInclude Source="/HexEditorMod.axaml" />
+		<ResourceInclude Source="/HexEditorExt.axaml" />
     </ResourceDictionary.MergedDictionaries>
 </ResourceDictionary>

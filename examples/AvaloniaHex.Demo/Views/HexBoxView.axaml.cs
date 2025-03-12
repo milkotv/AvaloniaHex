@@ -176,8 +176,7 @@ namespace AvaloniaHex.Demo.Views
             // Create the document first!
             UpdateText(Text);
 
-            OffsetLabel.FontSize = _labelsFontSize;
-            SelectionLabel.FontSize = _labelsFontSize;
+            BytesLabel.FontSize = _labelsFontSize;
             ModeLabel.FontSize = _labelsFontSize;
         }
 
@@ -258,11 +257,12 @@ namespace AvaloniaHex.Demo.Views
             StatusLine.IsVisible = IsStatusLineVisible;
             if (IsStatusLineVisible)
             {
-                OffsetLabel.Text =
-                    $"{HexBox.Caret.Location.ByteIndex + 1}{(BytesNum > 0 ? $"/{HexBox.Document!.Length}" : string.Empty)}";
-                SelectionLabel.Text = HexBox.Selection.Range.ByteLength > 1 ?
-                    $"Selected {HexBox.Selection.Range.ByteLength} bytes [{HexBox.Selection.Range.Start.ByteIndex}-{HexBox.Selection.Range.End.ByteIndex}]" : string.Empty;
                 ModeLabel.Text = HexBox.Caret.Mode == EditingMode.Insert ? "INS" : "OVR";
+
+                if (HexBox.Selection.Range.ByteLength > 1)
+                    BytesLabel.Text =  $"Selected {HexBox.Selection.Range.ByteLength} bytes [{HexBox.Selection.Range.Start.ByteIndex + 1}, {HexBox.Selection.Range.End.ByteIndex}]";
+                else
+                    BytesLabel.Text = $"Byte {HexBox.Caret.Location.ByteIndex + 1}{(BytesNum > 0 ? $" out of {HexBox.Document!.Length}" : string.Empty)}";
             }
         }
     }

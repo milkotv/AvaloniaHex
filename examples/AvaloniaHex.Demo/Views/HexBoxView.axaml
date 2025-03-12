@@ -34,8 +34,7 @@
 
 		<Grid Name="StatusLine" Grid.Row="1">
 			<TextBlock Name="ModeLabel" HorizontalAlignment="Left"/>
-			<TextBlock Name="SelectionLabel" HorizontalAlignment="Center"/>
-			<TextBlock Name="OffsetLabel" HorizontalAlignment="Right"/>					
+			<TextBlock Name="BytesLabel" HorizontalAlignment="Right"/>
 		</Grid>
 	</Grid>
 	

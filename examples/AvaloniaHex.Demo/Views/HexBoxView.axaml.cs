@@ -60,12 +60,18 @@ namespace AvaloniaHex.Demo.Views
                 .Subscribe(x => HexBox.HexView.BytesPerLine = (int?)x);
 
             this.GetObservable(BytesNumProperty)
-                .Where(x => x > 0)
-                .Subscribe(x => UpdateBytesNum(x));
+                .Subscribe(x =>
+                {
+                    HexBox.CanResize = x == 0;
+                    UpdateBytesNum(x);
+                });
 
             this.GetObservable(IsReadOnlyProperty)
                 .Where(x => _document != null)
                 .Subscribe(x => _document!.IsReadOnly = x);
+
+            this.GetObservable(IsCyclicProperty)
+              .Subscribe(x => HexBox.IsCyclic = x);
 
             this.GetObservable(IsStatusLineVisibleProperty)
                 .Subscribe(_ => UpdateLabels());
@@ -112,6 +118,13 @@ namespace AvaloniaHex.Demo.Views
         {
             get => GetValue(BytesNumProperty);
             set => SetValue(BytesNumProperty, value);
+        }
+
+        public static readonly StyledProperty<bool> IsCyclicProperty = AvaloniaProperty.Register<HexBoxView, bool>(nameof(IsCyclic));
+        public bool IsCyclic
+        {
+            get => GetValue(IsCyclicProperty);
+            set => SetValue(IsCyclicProperty, value);
         }
 
         public static readonly StyledProperty<bool> IsReadOnlyProperty = AvaloniaProperty.Register<HexBoxView, bool>(nameof(IsReadOnly));
@@ -192,11 +205,11 @@ namespace AvaloniaHex.Demo.Views
         /// <param name="bytesNum"></param>
         private void UpdateBytesNum(uint? _bytesNum)
         {
-            if((_bytesNum ?? 0) == 0)
+            if((_bytesNum ?? 0) == 0 || _document == null || _document.Length == 0)
                 return;
 
             var bytesNum = _bytesNum!.Value;
-            if (bytesNum > _document!.Length)
+            if (bytesNum > _document.Length)
             {
                 var padding = new byte[bytesNum - _document.Length];
                 Array.Fill(padding, Convert.ToByte(HexBox.FillChar.ToString(), 16));

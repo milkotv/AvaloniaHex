@@ -80,55 +80,26 @@
 					<CheckBox Name="IsCyclic" Margin="10">Cyclic</CheckBox>
 				</StackPanel>
 
+			    <v:HexBoxView
+                    Text="CAFE"
+                    BytesPerLine="{Binding #BytesPerLine.Value}" 
+				    BytesNum="{Binding #BytesNum.Value}"
+                    IsOffsetColumnVisible="{Binding #ShowOffset.IsChecked}"
+			        IsHexColumnVisible="{Binding #ShowHex.IsChecked}"
+			        IsBinaryColumnVisible="{Binding #ShowBinary.IsChecked}"
+			        IsAsciiColumnVisible="{Binding #ShowAscii.IsChecked}"
+			        IsStatusLineVisible="{Binding #ShowStatus.IsChecked}"/>
+				
 			</StackPanel>
 
-			<!--<StackPanel Grid.Row="2">
-				<v:HexBoxView IsAsciiColumnVisible="True"/>
-				<v:HexBoxView />
-				<v:HexBoxView />
-				<v:HexBoxView />
-				<v:HexBoxView />
-				<v:HexBoxView />
-				<v:HexBoxView />
-				<v:HexBoxView />
-				<v:HexBoxView />
-				<v:HexBoxView />
-				<v:HexBoxView />
-				<v:HexBoxView />
-				<v:HexBoxView />
-				<v:HexBoxView />
-				<v:HexBoxView />
-				<v:HexBoxView />
-				<v:HexBoxView />
-				<v:HexBoxView />
-				<v:HexBoxView />
-				<v:HexBoxView />
-				<v:HexBoxView />
-				<v:HexBoxView />
-				<v:HexBoxView />
-				<v:HexBoxView />
-				<v:HexBoxView />
-				<v:HexBoxView />
-				<v:HexBoxView />
-				<v:HexBoxView />
-				<v:HexBoxView />
-				<v:HexBoxView />
-				<v:HexBoxView />
-				<v:HexBoxView />
-				<v:HexBoxView />
-				<v:HexBoxView />				
-			</StackPanel>-->
-			
-			
-			<v:HexBoxView Grid.Row="2" 
-                Text="CAFE"
-                BytesPerLine="{Binding #BytesPerLine.Value}" 
-				BytesNum="{Binding #BytesNum.Value}"
-                IsOffsetColumnVisible="{Binding #ShowOffset.IsChecked}"
-			    IsHexColumnVisible="{Binding #ShowHex.IsChecked}"
-			    IsBinaryColumnVisible="{Binding #ShowBinary.IsChecked}"
-			    IsAsciiColumnVisible="{Binding #ShowAscii.IsChecked}"
-			    IsStatusLineVisible="{Binding #ShowStatus.IsChecked}"/>
+			<StackPanel Grid.Row="2">
+				<Label Content="Empty"/>
+				<v:HexBoxView/>
+				
+				<Label Content="Cyclic" Margin="0,10"/>
+				<v:HexBoxView/>
+				
+			</StackPanel>
 		</Grid>
 
     </StackPanel>

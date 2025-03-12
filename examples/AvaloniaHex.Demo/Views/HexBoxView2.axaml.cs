@@ -11,9 +11,9 @@ using System.Reactive.Linq;
 
 namespace AvaloniaHex.Demo.Views
 {
-    public partial class HexBoxView : UserControl
+    public partial class HexBoxView2 : UserControl
     {
-        public HexBoxView()
+        public HexBoxView2()
         {
             InitializeComponent();
 
@@ -34,20 +34,20 @@ namespace AvaloniaHex.Demo.Views
             };
 
             // Enable the changes highlighter.
-            HexBox.HexView.LineTransformers.Add(_changesHighlighter);
-            HexBox.HexView.LineTransformers.Add(_invalidRangesHighlighter);
+            HexBox2.HexView.LineTransformers.Add(_changesHighlighter);
+            HexBox2.HexView.LineTransformers.Add(_invalidRangesHighlighter);
 
             // Divide each 8 bytes with a dashed line and separate colors.
-            var layer = HexBox.HexView.Layers.Get<CellGroupsLayer>();
+            var layer = HexBox2.HexView.Layers.Get<CellGroupsLayer>();
             layer.BytesPerGroup = 8;
             layer.Backgrounds.Add(new SolidColorBrush(Colors.Gray, 0.1D));
             layer.Backgrounds.Add(null);
             layer.Border = new Pen(Brushes.Gray, dashStyle: DashStyle.Dash);
 
-            HexBox.DocumentChanged += HexBoxOnDocumentChanged;
-            HexBox.Selection.RangeChanged += SelectionOnRangeChanged;
-            HexBox.Caret.ModeChanged += CaretOnModeChanged;
-            HexBox.Caret.LocationChanged += CaretOnLocationChanged;
+            HexBox2.DocumentChanged += HexBox2OnDocumentChanged;
+            HexBox2.Selection.RangeChanged += SelectionOnRangeChanged;
+            HexBox2.Caret.ModeChanged += CaretOnModeChanged;
+            HexBox2.Caret.LocationChanged += CaretOnLocationChanged;
 
             this.GetObservable(TextProperty)
               .Subscribe(x => UpdateText(x));
@@ -57,7 +57,7 @@ namespace AvaloniaHex.Demo.Views
 
             this.GetObservable(BytesPerLineProperty)
                 .Where(x => x > 0)
-                .Subscribe(x => HexBox.HexView.BytesPerLine = (int?)x);
+                .Subscribe(x => HexBox2.HexView.BytesPerLine = (int?)x);
 
             this.GetObservable(BytesNumProperty)
                 .Where(x => x > 0)
@@ -169,22 +169,15 @@ namespace AvaloniaHex.Demo.Views
         /// <param name="e"></param>
         protected override void OnLoaded(RoutedEventArgs e)
         {
-            base.OnLoaded(e);           
-            HexBox.Document = new DynamicBinaryDocument();
-            HexBox.Caret.Mode = EditingMode.Insert;
-
-            // Create the document first!
-            UpdateText(Text);
-
-            OffsetLabel.FontSize = _labelsFontSize;
-            SelectionLabel.FontSize = _labelsFontSize;
-            ModeLabel.FontSize = _labelsFontSize;
+            base.OnLoaded(e);
+            HexBox2.Document = new DynamicBinaryDocument();
+            HexBox2.Caret.Mode = EditingMode.Insert;
         }
 
         private void UpdateText(string hex)
         {
             _document = new DynamicBinaryDocument(Convert.FromHexString((hex ?? string.Empty)));
-            HexBox.HexView.Document = _document;
+            HexBox2.HexView.Document = _document;
         }
 
         /// <summary>
@@ -193,14 +186,14 @@ namespace AvaloniaHex.Demo.Views
         /// <param name="bytesNum"></param>
         private void UpdateBytesNum(uint? _bytesNum)
         {
-            if((_bytesNum ?? 0) == 0)
+            if ((_bytesNum ?? 0) == 0)
                 return;
 
             var bytesNum = _bytesNum!.Value;
             if (bytesNum > _document!.Length)
             {
                 var padding = new byte[bytesNum - _document.Length];
-                Array.Fill(padding, Convert.ToByte(HexBox.FillChar.ToString(), 16));
+                Array.Fill(padding, Convert.ToByte(HexBox2.FillChar.ToString(), 16));
                 _document.InsertBytes(_document.Length, padding);
             }
             else if (bytesNum < _document.Length)
@@ -214,26 +207,21 @@ namespace AvaloniaHex.Demo.Views
         private void ToggleColumn<TColumn>(bool isVisible)
             where TColumn : Column
         {
-            var column = HexBox.Columns.Get<TColumn>();
+            var column = HexBox2.Columns.Get<TColumn>();
             column.IsVisible = isVisible;
         }
 
-        private void HexBoxOnDocumentChanged(object? sender, DocumentChangedEventArgs e)
+        private void HexBox2OnDocumentChanged(object? sender, DocumentChangedEventArgs e)
         {
             _changesHighlighter.Ranges.Clear();
             if (e.Old is not null)
                 e.Old.Changed -= DocumentOnChanged;
             if (e.New is not null)
                 e.New.Changed += DocumentOnChanged;
-
-            UpdateLabels();
         }
 
         private void DocumentOnChanged(object? sender, BinaryDocumentChange change)
         {
-            Debug.Print($"HexBox: {HexBox.Width}, {HexBox.Height}");
-
-            var doc = (sender as IBinaryDocument)!;
             switch (change.Type)
             {
                 case BinaryDocumentChangeType.Modify:
@@ -242,7 +230,7 @@ namespace AvaloniaHex.Demo.Views
 
                 case BinaryDocumentChangeType.Insert:
                 case BinaryDocumentChangeType.Remove:
-                    _changesHighlighter.Ranges.Add(change.AffectedRange.ExtendTo(doc.ValidRanges.EnclosingRange.End));
+                    _changesHighlighter.Ranges.Add(change.AffectedRange.ExtendTo(HexBox2.Document!.ValidRanges.EnclosingRange.End));
                     break;
 
                 default:
@@ -255,15 +243,15 @@ namespace AvaloniaHex.Demo.Views
         private void CaretOnModeChanged(object? sender, EventArgs e) => UpdateLabels();
         private void UpdateLabels()
         {
-            StatusLine.IsVisible = IsStatusLineVisible;
-            if (IsStatusLineVisible)
-            {
-                OffsetLabel.Text =
-                    $"{HexBox.Caret.Location.ByteIndex + 1}{(BytesNum > 0 ? $"/{HexBox.Document!.Length}" : string.Empty)}";
-                SelectionLabel.Text = HexBox.Selection.Range.ByteLength > 1 ?
-                    $"Selected {HexBox.Selection.Range.ByteLength} bytes [{HexBox.Selection.Range.Start.ByteIndex}-{HexBox.Selection.Range.End.ByteIndex}]" : string.Empty;
-                ModeLabel.Text = HexBox.Caret.Mode == EditingMode.Insert ? "INS" : "OVR";
-            }
+            //StatusLine.IsVisible = IsStatusLineVisible;
+            //if (IsStatusLineVisible)
+            //{
+            //    OffsetLabel.Text =
+            //        $"{HexBox.Caret.Location.ByteIndex + 1}{(BytesNum > 0 ? $"/{HexBox.Document!.Length}" : string.Empty)}";
+            //    SelectionLabel.Text = HexBox.Selection.Range.ByteLength > 1 ?
+            //        $"Selected {HexBox.Selection.Range.ByteLength} bytes [{HexBox.Selection.Range.Start.ByteIndex}-{HexBox.Selection.Range.End.ByteIndex}]" : string.Empty;
+            //    ModeLabel.Text = HexBox.Caret.Mode == EditingMode.Insert ? "INS" : "OVR";
+            //}
         }
     }
 }

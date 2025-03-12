@@ -86,7 +86,7 @@ public class CaretLayer : Layer
         AvaloniaProperty.RegisterDirect<CaretLayer, TimeSpan>(nameof(BlinkingInterval),
             x => x.BlinkingInterval,
             (x, v) => x.BlinkingInterval = v,
-            unsetValue: TimeSpan.FromMilliseconds(500));
+            unsetValue: TimeSpan.FromMilliseconds(300));
 
     /// <summary>
     /// Gets or sets the animation interval of the cursor blinker.

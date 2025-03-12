@@ -5,8 +5,15 @@
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
 			 xmlns:avaloniaHex="clr-namespace:AvaloniaHex;assembly=AvaloniaHex"
 			 xmlns:rendering="clr-namespace:AvaloniaHex.Rendering;assembly=AvaloniaHex"
+			 xmlns:editing="clr-namespace:AvaloniaHex.Editing;assembly=AvaloniaHex"			 
              x:Class="AvaloniaHex.Demo.Views.HexBoxView">
 
+	<UserControl.Styles>
+		<Style Selector="editing|CaretLayer">
+			<Setter Property="BlinkingInterval" Value="00:00:00.2"/>
+		</Style>
+	</UserControl.Styles>
+	
 	<Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*" MinWidth="200">
 
 		<avaloniaHex:HexEditor MinHeight="20"

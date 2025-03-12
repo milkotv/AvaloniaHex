@@ -72,7 +72,7 @@
 
 				<StackPanel Orientation="Horizontal">
 					<CheckBox Name="ShowOffset" Margin="10">Show Offset</CheckBox>
-					<CheckBox Name="ShowHex" Margin="10">Show Hex</CheckBox>
+					<CheckBox Name="ShowHex" Margin="10" IsChecked="True">Show Hex</CheckBox>
 					<CheckBox Name="ShowBinary" Margin="10">Show Binary</CheckBox>
 					<CheckBox Name="ShowAscii" Margin="10">Show Ascii</CheckBox>
 					<CheckBox Name="ShowStatus" Margin="10" IsChecked="True">Show Status</CheckBox>
@@ -81,6 +81,44 @@
 				</StackPanel>
 
 			</StackPanel>
+
+			<!--<StackPanel Grid.Row="2">
+				<v:HexBoxView IsAsciiColumnVisible="True"/>
+				<v:HexBoxView />
+				<v:HexBoxView />
+				<v:HexBoxView />
+				<v:HexBoxView />
+				<v:HexBoxView />
+				<v:HexBoxView />
+				<v:HexBoxView />
+				<v:HexBoxView />
+				<v:HexBoxView />
+				<v:HexBoxView />
+				<v:HexBoxView />
+				<v:HexBoxView />
+				<v:HexBoxView />
+				<v:HexBoxView />
+				<v:HexBoxView />
+				<v:HexBoxView />
+				<v:HexBoxView />
+				<v:HexBoxView />
+				<v:HexBoxView />
+				<v:HexBoxView />
+				<v:HexBoxView />
+				<v:HexBoxView />
+				<v:HexBoxView />
+				<v:HexBoxView />
+				<v:HexBoxView />
+				<v:HexBoxView />
+				<v:HexBoxView />
+				<v:HexBoxView />
+				<v:HexBoxView />
+				<v:HexBoxView />
+				<v:HexBoxView />
+				<v:HexBoxView />
+				<v:HexBoxView />				
+			</StackPanel>-->
+			
 			
 			<v:HexBoxView Grid.Row="2" 
                 Text="CAFE"

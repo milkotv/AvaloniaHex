@@ -1,0 +1,34 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+			 xmlns:avaloniaHex="clr-namespace:AvaloniaHex;assembly=AvaloniaHex"
+			 xmlns:rendering="clr-namespace:AvaloniaHex.Rendering;assembly=AvaloniaHex"
+			 xmlns:editing="clr-namespace:AvaloniaHex.Editing;assembly=AvaloniaHex"
+             x:Class="AvaloniaHex.Demo.Views.HexBoxView2">
+
+	<UserControl.Styles>
+		<Style Selector="editing|CaretLayer">
+			<Setter Property="BlinkingInterval" Value="00:00:00.3"/>
+		</Style>
+	</UserControl.Styles>
+	
+	<avaloniaHex:HexEditor
+			    MinHeight="20"
+				HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch"
+                x:Name="HexBox2"
+                BorderBrush="{DynamicResource MainBorderBrush}"
+                BorderThickness="1"
+                FontSize="14"
+                FontFamily="{StaticResource SourceCodeProFont}">
+		<avaloniaHex:HexEditor.Columns>
+			<rendering:OffsetColumn IsVisible="False"/>
+			<rendering:HexColumn/>
+			<rendering:BinaryColumn IsVisible="False" />
+			<rendering:AsciiColumn InvalidCellChar="?" IsVisible="True"/>
+		</avaloniaHex:HexEditor.Columns>			
+	</avaloniaHex:HexEditor>
+	
+</UserControl>

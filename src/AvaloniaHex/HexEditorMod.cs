@@ -1,0 +1,683 @@
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
+using Avalonia.Input;
+using Avalonia.Interactivity;
+using Avalonia.Media;
+using AvaloniaHex.Document;
+using AvaloniaHex.Editing;
+using AvaloniaHex.Rendering;
+using System;
+using System.ComponentModel.DataAnnotations;
+using System.Data.Common;
+using System.Text.RegularExpressions;
+
+namespace AvaloniaHex;
+
+/// <summary>
+/// A control that allows for displaying and editing binary data in columns.
+/// </summary>
+public class HexEditorMod : TemplatedControl
+{
+    /// <summary>
+    /// Fires when the document in the hex editor has changed.
+    /// </summary>
+    public event EventHandler<DocumentChangedEventArgs>? DocumentChanged;
+
+    private ScrollViewer? _scrollViewer;
+
+    private BitLocation? _selectionAnchorPoint;
+    private bool _isMouseDragging;
+
+    static HexEditorMod()
+    {
+        FocusableProperty.OverrideDefaultValue<HexEditorMod>(true);
+        HorizontalScrollBarVisibilityProperty.OverrideDefaultValue<HexEditorMod>(ScrollBarVisibility.Auto);
+        VerticalScrollBarVisibilityProperty.OverrideDefaultValue<HexEditorMod>(ScrollBarVisibility.Auto);
+        FontFamilyProperty.Changed.AddClassHandler<HexEditorMod, FontFamily>(ForwardToHexView);
+        FontSizeProperty.Changed.AddClassHandler<HexEditorMod, double>(ForwardToHexView);
+        ForegroundProperty.Changed.AddClassHandler<HexEditorMod, IBrush?>(ForwardToHexView);
+        DocumentProperty.Changed.AddClassHandler<HexEditorMod, IBinaryDocument?>(OnDocumentChanged);
+    }
+
+    /// <summary>
+    /// Creates a new empty hex editor.
+    /// </summary>
+    public HexEditorMod()
+    {
+        HexView = new HexView();
+        Caret = new Caret(HexView);
+        Selection = new Selection(HexView);
+
+        AddHandler(KeyDownEvent, OnPreviewKeyDown, RoutingStrategies.Tunnel);
+
+        HexView.Layers.InsertBefore<TextLayer>(new CurrentLineLayer(Caret, Selection));
+        HexView.Layers.InsertBefore<TextLayer>(new SelectionLayer(Caret, Selection));
+        HexView.Layers.Add(new CaretLayer(Caret));
+        HexView.DocumentChanged += HexViewOnDocumentChanged;
+
+        Caret.PrimaryColumnIndex = 1;
+        Caret.LocationChanged += CaretOnLocationChanged;
+    }
+
+    /// <summary>
+    /// Dependency property for <see cref="HorizontalScrollBarVisibility"/>
+    /// </summary>
+    public static readonly AttachedProperty<ScrollBarVisibility> HorizontalScrollBarVisibilityProperty =
+        ScrollViewer.HorizontalScrollBarVisibilityProperty.AddOwner<HexEditorMod>();
+
+    /// <summary>
+    /// Gets or sets the horizontal scroll bar visibility.
+    /// </summary>
+    public ScrollBarVisibility HorizontalScrollBarVisibility
+    {
+        get => GetValue(HorizontalScrollBarVisibilityProperty);
+        set => SetValue(HorizontalScrollBarVisibilityProperty, value);
+    }
+
+    /// <summary>
+    /// Dependency property for <see cref="VerticalScrollBarVisibility"/>
+    /// </summary>
+    public static readonly AttachedProperty<ScrollBarVisibility> VerticalScrollBarVisibilityProperty =
+        ScrollViewer.VerticalScrollBarVisibilityProperty.AddOwner<HexEditorMod>();
+
+    /// <summary>
+    /// Gets or sets the horizontal scroll bar visibility.
+    /// </summary>
+    public ScrollBarVisibility VerticalScrollBarVisibility
+    {
+        get => GetValue(VerticalScrollBarVisibilityProperty);
+        set => SetValue(VerticalScrollBarVisibilityProperty, value);
+    }
+
+    /// <summary>
+    /// Gets the embedded hex view control responsible for rendering the data.
+    /// </summary>
+    public HexView HexView { get; }
+
+    /// <summary>
+    /// Dependency property for <see cref="ColumnPadding"/>
+    /// </summary>
+    public static readonly DirectProperty<HexEditorMod, double> ColumnPaddingProperty =
+        AvaloniaProperty.RegisterDirect<HexEditorMod, double>(
+            nameof(ColumnPadding),
+            editor => editor.ColumnPadding,
+            (editor, value) => editor.ColumnPadding = value
+        );
+
+    /// <summary>
+    /// Gets the amount of spacing in between columns.
+    /// </summary>
+    public double ColumnPadding
+    {
+        get => HexView.ColumnPadding;
+        set => HexView.ColumnPadding = value;
+    }
+
+    /// <summary>
+    /// Dependency property for <see cref="Document"/>.
+    /// </summary>
+    public static readonly StyledProperty<IBinaryDocument?> DocumentProperty =
+        AvaloniaProperty.Register<HexEditorMod, IBinaryDocument?>(nameof(Document));
+
+    /// <summary>
+    /// Gets or sets the binary document that is currently being displayed.
+    /// </summary>
+    public IBinaryDocument? Document
+    {
+        get => GetValue(DocumentProperty);
+        set => SetValue(DocumentProperty, value);
+    }
+
+    /// <summary>
+    /// Gets the caret object in the editor control.
+    /// </summary>
+    public Caret Caret { get; }
+
+    /// <summary>
+    /// Gets the current selection in the editor control.
+    /// </summary>
+    public Selection Selection { get; }
+
+    /// <summary>
+    /// Dependency property for <see cref="Columns"/>.
+    /// </summary>
+    public static readonly DirectProperty<HexEditorMod, HexView.ColumnCollection> ColumnsProperty =
+        AvaloniaProperty.RegisterDirect<HexEditorMod, HexView.ColumnCollection>(nameof(Columns), o => o.Columns);
+
+    /// <summary>
+    /// Gets the columns displayed in the hex editor.
+    /// </summary>
+    public HexView.ColumnCollection Columns => HexView.Columns;
+
+    /// <summary>
+    /// Gets or sets the binary document that is currently being displayed.
+    /// </summary>    
+    [RegularExpression("^[0-9a-fA-F]$", ErrorMessage = "FillChar must be 1 HEX character")]
+    public string FillChar { get; set; } = "0";      
+
+    /// <summary>
+    /// Gets or sets the binary document that is currently being displayed.
+    /// </summary>
+    public bool CanResize { get; set; } = true;    
+
+    /// <summary>
+    /// Gets or sets if (in case of !CanResize) the Caret needs to rotate to the beining if reacues the end.
+    /// </summary>
+    public bool IsCyclic { get; set; } = false;      
+
+    /// <inheritdoc />
+    protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
+    {
+        base.OnApplyTemplate(e);
+
+        _scrollViewer = e.NameScope.Find<ScrollViewer>("PART_ScrollViewer");
+        if (_scrollViewer is not null)
+            _scrollViewer.Content = HexView;
+    }
+
+    private static void ForwardToHexView<TValue>(HexEditorMod sender, AvaloniaPropertyChangedEventArgs<TValue> e)
+    {
+        sender.HexView.SetValue(e.Property, e.NewValue.Value);
+    }
+
+    private void CaretOnLocationChanged(object? sender, EventArgs e)
+    {
+        HexView.BringIntoView(Caret.Location);
+    }
+
+    private static void OnDocumentChanged(HexEditorMod sender, AvaloniaPropertyChangedEventArgs<IBinaryDocument?> e)
+    {
+        sender.HexView.Document = e.NewValue.Value;
+    }
+
+    private void HexViewOnDocumentChanged(object? sender, DocumentChangedEventArgs e)
+    {
+        Document = e.New;
+        Caret.Location = default;
+        UpdateSelection(Caret.Location, false);
+        OnDocumentChanged(e);
+    }
+
+    /// <summary>
+    /// Fires the <see cref="DocumentChanged"/> event.
+    /// </summary>
+    /// <param name="e">The arguments describing the event.</param>
+    protected virtual void OnDocumentChanged(DocumentChangedEventArgs e)
+    {
+        DocumentChanged?.Invoke(this, e);
+    }
+
+    /// <inheritdoc />
+    protected override void OnPointerPressed(PointerPressedEventArgs e)
+    {
+        base.OnPointerPressed(e);
+
+        var point = e.GetCurrentPoint(HexView);
+        if (point.Properties.IsLeftButtonPressed)
+        {
+            var position = point.Position;
+
+            if (HexView.GetColumnByPoint(position) is CellBasedColumn column)
+            {
+                Caret.PrimaryColumnIndex = column.Index;
+                if (HexView.GetLocationByPoint(position) is { } location)
+                {
+                    // Do not allow to go boyond if !CanResize
+                    if(IsOverflow(location.ByteIndex))
+                    {
+                        e.Handled = true;
+                        return;
+                    }
+
+                    // Update selection when holding down the shift key.
+                    bool isShiftDown = (e.KeyModifiers & KeyModifiers.Shift) != 0;
+                    if (isShiftDown)
+                    {
+                        _selectionAnchorPoint ??= Caret.Location;
+                        Selection.Range = new BitRange(
+                            location.Min(_selectionAnchorPoint.Value).AlignDown(),
+                            location.Max(_selectionAnchorPoint.Value).NextOrMax().AlignUp()
+                        );
+                    }
+                    else
+                    {
+                        Selection.Range = new BitRange(location.AlignDown(), location.NextOrMax().AlignUp());
+                        _selectionAnchorPoint = location;
+                    }
+
+                    // Actually update the caret.
+                    Caret.Location = location;
+                    _isMouseDragging = true;
+                }
+            }
+        }
+    }
+
+    /// <inheritdoc />
+    protected override void OnPointerMoved(PointerEventArgs e)
+    {
+        base.OnPointerMoved(e);
+
+        Cursor = HexView.GetColumnByPoint(e.GetPosition(this)) is { } hoverColumn
+            ? hoverColumn.Cursor
+            : null;
+
+        if (_isMouseDragging
+            && _selectionAnchorPoint is { } anchorPoint
+            && Caret.PrimaryColumn is { } column)
+        {
+            var position = e.GetPosition(HexView);
+            if (HexView.GetLocationByPoint(position, column) is { } location)
+            {
+                if (IsOverflow(location.ByteIndex))
+                {
+                    e.Handled = true;
+                    return;
+                }
+
+                Selection.Range = new BitRange(
+                    location.Min(anchorPoint).AlignDown(),
+                    location.Max(anchorPoint).NextOrMax().AlignUp()
+                );
+
+                Caret.Location = location;
+            }
+        }
+    }
+
+    /// <inheritdoc />
+    protected override void OnPointerReleased(PointerReleasedEventArgs e)
+    {
+        base.OnPointerReleased(e);
+
+        _isMouseDragging = false;
+    }
+
+    /// <inheritdoc />
+    protected override void OnTextInput(TextInputEventArgs e)
+    {
+        base.OnTextInput(e);
+
+        // Are we in a writeable document?
+        if (Document is not {IsReadOnly: false})
+            return;
+
+        // Do we have any text to write into a column?
+        if (string.IsNullOrEmpty(e.Text) || Caret.PrimaryColumn is null)
+            return;
+
+        if (Caret.Mode == EditingMode.Insert)
+        {
+            // Can we insert?
+            if (!Document.CanInsert)
+                return;
+
+            // If we selected something while inserting, a natural expectation is that the selection is deleted first.
+            if (Selection.Range.ByteLength > 1)
+            {
+                if (!Document.CanRemove)
+                    return;
+
+                Delete();
+            }
+        }
+
+        // Allow fill when > 1 b selected and not resizable
+        if (!CanResize && Selection.Range.ByteLength > 1)
+        {
+            FillSelection(e.Text);
+            UpdateSelection(Caret.Location, false);
+            return;
+        }
+
+        // Dispatch text input to the primary column.
+        var location = Caret.Location;
+        if (!Caret.PrimaryColumn.HandleTextInput(ref location, e.Text, Caret.Mode))
+            return;
+
+        // Do not allow resizing and go to the begining if cyclic
+        if (!CanResize && IsOverflow(location.ByteIndex) && location.BitIndex == 4)
+        {
+            if (IsCyclic)
+            {
+                Caret.GoToStartOfLine();
+                UpdateSelection(location, false);
+            }
+            return;
+        }
+
+        // Update caret location.
+        Caret.Location = location;
+        UpdateSelection(Caret.Location, false);
+    }
+
+    private async void OnPreviewKeyDown(object? sender, KeyEventArgs e)
+    {
+        var oldLocation = Caret.Location;
+        bool isShiftDown = (e.KeyModifiers & KeyModifiers.Shift) != 0;
+
+        switch (e.Key)
+        {
+            case Key.A when (e.KeyModifiers & KeyModifiers.Control) != 0:
+                Selection.SelectAll();
+                break;
+
+            case Key.C when (e.KeyModifiers & KeyModifiers.Control) != 0:
+                await Copy();
+                break;
+
+            case Key.V when (e.KeyModifiers & KeyModifiers.Control) != 0:
+                await Paste();
+                break;
+
+            case Key.Home when (e.KeyModifiers & KeyModifiers.Control) != 0:
+                Caret.GoToStartOfDocument();
+                UpdateSelection(oldLocation, isShiftDown);
+                break;
+
+            case Key.Home:
+                Caret.GoToStartOfLine();
+                UpdateSelection(oldLocation, isShiftDown);
+                break;
+
+            case Key.End when (e.KeyModifiers & KeyModifiers.Control) != 0:
+                Caret.GoToEndOfDocument();
+                UpdateSelection(oldLocation, isShiftDown);
+                break;
+
+            case Key.End:
+                Caret.GoToEndOfLine();
+                UpdateSelection(oldLocation, isShiftDown);
+                break;
+
+            case Key.Left:
+                if (IsCyclic && oldLocation.ByteIndex == 0 && oldLocation.BitIndex == 4)
+                {
+                    Caret.GoToEndOfLine();
+                    UpdateSelection(oldLocation, isShiftDown);
+                    return;
+                }
+                Caret.GoLeft();
+                UpdateSelection(oldLocation, isShiftDown);
+                break;
+
+            case Key.Up when (e.KeyModifiers & KeyModifiers.Control) != 0:
+                HexView.ScrollOffset = new Vector(
+                    HexView.ScrollOffset.X,
+                    Math.Max(0, HexView.ScrollOffset.Y - 1)
+                );
+                break;
+
+            case Key.Up:                
+                Caret.GoUp();
+                UpdateSelection(oldLocation, isShiftDown);
+                break;
+
+            case Key.PageUp:
+                Caret.GoPageUp();
+                UpdateSelection(oldLocation, isShiftDown);
+                e.Handled = true;
+                break;
+
+            case Key.Right:
+                if (!CanResize && IsOverflow(oldLocation.ByteIndex + 1) && oldLocation.BitIndex == 0)
+                {
+                    if (IsCyclic)
+                    {
+                        Caret.GoToStartOfLine();
+                        UpdateSelection(oldLocation, isShiftDown);
+                    }
+                    return;
+                }                
+                Caret.GoRight();
+                UpdateSelection(oldLocation, isShiftDown);                
+                break;
+
+            case Key.Down when (e.KeyModifiers & KeyModifiers.Control) != 0:
+                HexView.ScrollOffset = new Vector(
+                    HexView.ScrollOffset.X,
+                    Math.Min(HexView.Extent.Height - 1, HexView.ScrollOffset.Y + 1)
+                );
+                break;
+
+            case Key.Down:
+                if (!CanResize)
+                {
+                    if (IsCyclic)
+                    {
+                        Caret.GoToEndOfLine();
+                        UpdateSelection(oldLocation, isShiftDown);
+                    }
+                    return;
+                }
+                Caret.GoDown();
+                UpdateSelection(oldLocation, isShiftDown);
+                break;
+
+            case Key.PageDown:
+                if (!CanResize)
+                {
+                    if (IsCyclic)
+                    {
+                        Caret.GoToEndOfLine();
+                        UpdateSelection(oldLocation, isShiftDown);
+                    }
+                    e.Handled = true;
+                    return;
+                }
+                Caret.GoPageDown();
+                UpdateSelection(oldLocation, isShiftDown);
+                e.Handled = true;
+                break;
+
+            case Key.Insert:
+                Caret.Mode = Caret.Mode == EditingMode.Overwrite && CanResize == true
+                    ? EditingMode.Insert
+                    : EditingMode.Overwrite;
+                break;
+
+            case Key.Delete:
+                Delete();
+                break;
+
+            case Key.Back:
+                Backspace();
+                break;
+        }
+    }
+
+    /// <inheritdoc />
+    protected override void OnSizeChanged(SizeChangedEventArgs e)
+    {
+        HexView.BringIntoView(Caret.Location);
+        base.OnSizeChanged(e);
+    }
+
+    /// <summary>
+    /// Copies the currently selected text to the clipboard.
+    /// </summary>
+    public async Task Copy()
+    {
+        if (Caret.PrimaryColumn is not { } column || TopLevel.GetTopLevel(this)?.Clipboard is not { } clipboard)
+            return;
+
+        string? text = column.GetText(Selection.Range);
+        if (string.IsNullOrEmpty(text))
+            return;
+
+        await clipboard.SetTextAsync(text);
+    }
+
+    /// <summary>
+    /// Pastes text on the clipboard into the current column.
+    /// </summary>
+    public async Task Paste()
+    {
+        if (Caret.Mode == EditingMode.Insert && Document is not {CanInsert: true})
+            return;
+
+        var oldLocation = Caret.Location;
+        if (Caret.PrimaryColumn is not {} column || TopLevel.GetTopLevel(this)?.Clipboard is not { } clipboard)
+            return;
+
+        string? text = await clipboard.GetTextAsync();
+        if (string.IsNullOrEmpty(text))
+            return;
+
+        var newLocation = oldLocation;
+        if (!column.HandleTextInput(ref newLocation, text, Caret.Mode))
+            return;
+
+        Caret.Location = newLocation;
+        UpdateSelection(oldLocation, false);
+    }
+
+    /// <summary>
+    /// Deletes the currently selected bytes from the document.
+    /// </summary>
+    public void Delete()
+    {
+        if (Caret.PrimaryColumn is not { } column)
+            return;
+
+        if (Document is not { CanRemove: true } document)
+            return;
+
+        var selectionRange = Selection.Range;
+        if (!CanResize)
+        {
+            if (selectionRange.ByteLength > 1)
+                FillSelection(FillChar);
+            else
+            {
+                var location = Caret.Location;
+                if (Caret.PrimaryColumn.HandleTextInput(ref location, FillChar, EditingMode.Overwrite))
+                    Caret.Location = location;
+            }
+            return;
+        }
+        else
+            document.RemoveBytes(selectionRange.Start.ByteIndex, selectionRange.ByteLength);
+
+        Caret.Location = new BitLocation(selectionRange.Start.ByteIndex, column.FirstBitIndex);
+        Selection.Range = Caret.Location.ToSingleByteRange();
+        _selectionAnchorPoint = null;
+    }
+
+    /// <summary>
+    /// Deletes the currently selected bytes and the previous byte from the document.
+    /// </summary>
+    public void Backspace()
+    {
+        if (Caret.PrimaryColumn is not { } column)
+            return;
+
+        if (Document is not { CanRemove: true } document)
+            return;
+
+        var selectionRange = Selection.Range;
+        if (!CanResize)
+        {
+            if (selectionRange.ByteLength > 1)
+            {
+                FillSelection(FillChar);
+                return;
+            }
+            else
+            {
+                var _ = Caret.Location;
+                if (!Caret.PrimaryColumn.HandleTextInput(ref _, FillChar, EditingMode.Overwrite))
+                    return;
+            }
+        }       
+
+        if (selectionRange.ByteLength <= 1)
+        {
+            if (Caret.Location.BitIndex == column.FirstBitIndex)
+            {
+                // If caret is at the left-most cell of a byte, it is more intuitive to have it remove the previous byte.
+                // In this case, we can only perform the deletion if we're not at the beginning of the document.
+                if (selectionRange.Start.ByteIndex != 0)
+                {
+                    if (CanResize)
+                    {
+                        document.RemoveBytes(selectionRange.Start.ByteIndex - 1, 1);
+                        Caret.Location = new BitLocation(selectionRange.Start.ByteIndex - 1, column.FirstBitIndex);
+                    }
+                    else
+                        Caret.Location = new BitLocation(selectionRange.Start.ByteIndex - 1, 0);
+                }
+            }
+            else
+            {
+                // If caret is not at a left-most cell of a byte, it is more intuitive to have it remove the current byte.
+                if (CanResize)
+                    document.RemoveBytes(selectionRange.Start.ByteIndex, 1);
+
+                Caret.Location = selectionRange.Start.ByteIndex == 0
+                    ? new BitLocation(0, column.FirstBitIndex)
+                    : new BitLocation(selectionRange.Start.ByteIndex, column.FirstBitIndex);
+            }
+        }
+        else
+        {
+            // Otherwise, simply treat as a normal delete.
+            if (CanResize)
+                document.RemoveBytes(selectionRange.Start.ByteIndex, selectionRange.ByteLength);
+
+            Caret.Location = new BitLocation(selectionRange.Start.ByteIndex, column.FirstBitIndex);
+        }
+
+        Selection.Range = Caret.Location.ToSingleByteRange();
+        _selectionAnchorPoint = null;
+    }
+
+    private void UpdateSelection(BitLocation from, bool expand)
+    {
+        if (!expand)
+        {
+            _selectionAnchorPoint = null;
+            Selection.Range = new BitRange(Caret.Location.AlignDown(), Caret.Location.NextOrMax().AlignUp());
+        }
+        else
+        {
+            _selectionAnchorPoint ??= from.AlignDown();
+            Selection.Range = new BitRange(
+                Caret.Location.Min(_selectionAnchorPoint.Value).AlignDown(),
+                Caret.Location.Max(_selectionAnchorPoint.Value).NextOrMax().AlignUp()
+            );
+        }
+    }
+
+    private bool IsOverflow(ulong byteIndex) => 
+        !CanResize && Document != null && byteIndex >= Document.ValidRanges.EnclosingRange.ByteLength;
+
+    private void FillSelection(string fill)
+    {
+        if (string.IsNullOrEmpty(fill))
+            return;
+
+        if (Caret.PrimaryColumn is not { } column)
+            return;
+
+        if (Document is not { IsReadOnly: false} document)
+            return;
+
+        var charToFill = fill[0];
+        var selectionRange = Selection.Range;
+        var buffer = new byte[selectionRange.ByteLength];
+
+        Array.Fill(buffer, Convert.ToByte($"{charToFill}{charToFill}", 16));
+        document.WriteBytes(selectionRange.Start.ByteIndex, buffer);
+
+        Caret.Location = new BitLocation(selectionRange.Start.ByteIndex, column.FirstBitIndex);
+    }
+    /// <inheritdoc />
+    protected override void OnGotFocus(GotFocusEventArgs e)
+    {
+        base.OnGotFocus(e);
+        HexView.Focus();
+        e.Handled = true;
+    }
+}

@@ -60,7 +60,7 @@ namespace AvaloniaHex.Demo.Extensions
             return field?.GetValue(o) is T value  ? value : default;
         }
 
-        public static void SetPropertyValue<T>(this object o, string propertyName, object? value)
+        public static void SetPropertyValue<T>(this object o, string propertyName, T? value)
         {
             var field = o.GetType().GetField(propertyName, BindingFlags.NonPublic | BindingFlags.Instance);
             field?.SetValue(o, value);

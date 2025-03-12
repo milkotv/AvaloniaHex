@@ -147,64 +147,7 @@ public class HexEditor : TemplatedControl
     /// <summary>
     /// Gets the columns displayed in the hex editor.
     /// </summary>
-    public HexView.ColumnCollection Columns => HexView.Columns;
-
-    /// <summary>
-    /// Gets a value indicating that instead of removing, the byte should be replaced insted with this one.
-    /// </summary>   
-    public static readonly StyledProperty<string> FillCharProperty =
-        AvaloniaProperty.Register<HexEditor, string>(nameof(FillChar), "0");
-
-    /// <summary>
-    /// Gets or sets the binary document that is currently being displayed.
-    /// </summary>
-    public string FillChar
-    {
-        get => GetValue(FillCharProperty);
-        set
-        {
-            if (!string.IsNullOrEmpty(value) && Regex.IsMatch(value, "^[0-9a-fA-F]$"))
-                SetValue(FillCharProperty, value);
-            else
-                throw new ArgumentException("FillChar must be 1 HEX character");
-        }
-    }
-
-    /// <summary>
-    /// Gets a value indicating that instead of removing, the byte should be replaced insted with this one.
-    /// </summary>   
-    public static readonly StyledProperty<bool> CanResizeProperty =
-        AvaloniaProperty.Register<HexEditor, bool>(nameof(CanResize), true);
-
-    /// <summary>
-    /// Gets or sets the binary document that is currently being displayed.
-    /// </summary>
-    public bool CanResize
-    {
-        get => GetValue(CanResizeProperty);
-        set
-        {
-            if(!value)
-                Caret.Mode = EditingMode.Overwrite;
-            SetValue(CanResizeProperty, value);
-        }
-    }
-
-
-    /// <summary>
-    /// Gets a value indicating if (in case of !CanResize) the Caret needs to rotate to the beining if reacues the end.
-    /// </summary>   
-    public static readonly StyledProperty<bool> IsCyclicProperty =
-        AvaloniaProperty.Register<HexEditor, bool>(nameof(IsCyclic), true);
-
-    /// <summary>
-    /// Gets or sets if (in case of !CanResize) the Caret needs to rotate to the beining if reacues the end.
-    /// </summary>
-    public bool IsCyclic
-    {
-        get => GetValue(IsCyclicProperty);
-        set => SetValue(IsCyclicProperty, value);
-    }
+    public HexView.ColumnCollection Columns => HexView.Columns;            
 
     /// <inheritdoc />
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
@@ -262,14 +205,7 @@ public class HexEditor : TemplatedControl
             {
                 Caret.PrimaryColumnIndex = column.Index;
                 if (HexView.GetLocationByPoint(position) is { } location)
-                {
-                    // Do not allow to go boyond if !CanResize
-                    if(IsOverflow(location.ByteIndex))
-                    {
-                        e.Handled = true;
-                        return;
-                    }
-
+                {                    
                     // Update selection when holding down the shift key.
                     bool isShiftDown = (e.KeyModifiers & KeyModifiers.Shift) != 0;
                     if (isShiftDown)
@@ -309,13 +245,7 @@ public class HexEditor : TemplatedControl
         {
             var position = e.GetPosition(HexView);
             if (HexView.GetLocationByPoint(position, column) is { } location)
-            {
-                if (IsOverflow(location.ByteIndex))
-                {
-                    e.Handled = true;
-                    return;
-                }
-
+            {                
                 Selection.Range = new BitRange(
                     location.Min(anchorPoint).AlignDown(),
                     location.Max(anchorPoint).NextOrMax().AlignUp()
@@ -361,31 +291,12 @@ public class HexEditor : TemplatedControl
 
                 Delete();
             }
-        }
-
-        // Allow fill when > 1 b selected and not resizable
-        if (!CanResize && Selection.Range.ByteLength > 1)
-        {
-            FillSelection(e.Text);
-            UpdateSelection(Caret.Location, false);
-            return;
-        }
+        }       
 
         // Dispatch text input to the primary column.
         var location = Caret.Location;
         if (!Caret.PrimaryColumn.HandleTextInput(ref location, e.Text, Caret.Mode))
-            return;
-
-        // Do not allow resizing and go to the begining if cyclic
-        if (!CanResize && IsOverflow(location.ByteIndex) && location.BitIndex == 4)
-        {
-            if (IsCyclic)
-            {
-                Caret.GoToStartOfLine();
-                UpdateSelection(location, false);
-            }
-            return;
-        }
+            return;        
 
         // Update caret location.
         Caret.Location = location;
@@ -431,13 +342,7 @@ public class HexEditor : TemplatedControl
                 UpdateSelection(oldLocation, isShiftDown);
                 break;
 
-            case Key.Left:
-                if (IsCyclic && oldLocation.ByteIndex == 0 && oldLocation.BitIndex == 4)
-                {
-                    Caret.GoToEndOfLine();
-                    UpdateSelection(oldLocation, isShiftDown);
-                    return;
-                }
+            case Key.Left:                
                 Caret.GoLeft();
                 UpdateSelection(oldLocation, isShiftDown);
                 break;
@@ -460,16 +365,7 @@ public class HexEditor : TemplatedControl
                 e.Handled = true;
                 break;
 
-            case Key.Right:
-                if (!CanResize && IsOverflow(oldLocation.ByteIndex + 1) && oldLocation.BitIndex == 0)
-                {
-                    if (IsCyclic)
-                    {
-                        Caret.GoToStartOfLine();
-                        UpdateSelection(oldLocation, isShiftDown);
-                    }
-                    return;
-                }                
+            case Key.Right:                              
                 Caret.GoRight();
                 UpdateSelection(oldLocation, isShiftDown);                
                 break;
@@ -481,38 +377,19 @@ public class HexEditor : TemplatedControl
                 );
                 break;
 
-            case Key.Down:
-                if (!CanResize)
-                {
-                    if (IsCyclic)
-                    {
-                        Caret.GoToEndOfLine();
-                        UpdateSelection(oldLocation, isShiftDown);
-                    }
-                    return;
-                }
+            case Key.Down:                
                 Caret.GoDown();
                 UpdateSelection(oldLocation, isShiftDown);
                 break;
 
-            case Key.PageDown:
-                if (!CanResize)
-                {
-                    if (IsCyclic)
-                    {
-                        Caret.GoToEndOfLine();
-                        UpdateSelection(oldLocation, isShiftDown);
-                    }
-                    e.Handled = true;
-                    return;
-                }
+            case Key.PageDown:                
                 Caret.GoPageDown();
                 UpdateSelection(oldLocation, isShiftDown);
                 e.Handled = true;
                 break;
 
             case Key.Insert:
-                Caret.Mode = Caret.Mode == EditingMode.Overwrite && CanResize == true
+                Caret.Mode = Caret.Mode == EditingMode.Overwrite
                     ? EditingMode.Insert
                     : EditingMode.Overwrite;
                 break;
@@ -584,21 +461,8 @@ public class HexEditor : TemplatedControl
         if (Document is not { CanRemove: true } document)
             return;
 
-        var selectionRange = Selection.Range;
-        if (!CanResize)
-        {
-            if (selectionRange.ByteLength > 1)
-                FillSelection(FillChar);
-            else
-            {
-                var location = Caret.Location;
-                if (Caret.PrimaryColumn.HandleTextInput(ref location, FillChar, EditingMode.Overwrite))
-                    Caret.Location = location;
-            }
-            return;
-        }
-        else
-            document.RemoveBytes(selectionRange.Start.ByteIndex, selectionRange.ByteLength);
+        var selectionRange = Selection.Range;        
+        document.RemoveBytes(selectionRange.Start.ByteIndex, selectionRange.ByteLength);
 
         Caret.Location = new BitLocation(selectionRange.Start.ByteIndex, column.FirstBitIndex);
         Selection.Range = Caret.Location.ToSingleByteRange();
@@ -617,21 +481,6 @@ public class HexEditor : TemplatedControl
             return;
 
         var selectionRange = Selection.Range;
-        if (!CanResize)
-        {
-            if (selectionRange.ByteLength > 1)
-            {
-                FillSelection(FillChar);
-                return;
-            }
-            else
-            {
-                var _ = Caret.Location;
-                if (!Caret.PrimaryColumn.HandleTextInput(ref _, FillChar, EditingMode.Overwrite))
-                    return;
-            }
-        }       
-
         if (selectionRange.ByteLength <= 1)
         {
             if (Caret.Location.BitIndex == column.FirstBitIndex)
@@ -640,21 +489,13 @@ public class HexEditor : TemplatedControl
                 // In this case, we can only perform the deletion if we're not at the beginning of the document.
                 if (selectionRange.Start.ByteIndex != 0)
                 {
-                    if (CanResize)
-                    {
-                        document.RemoveBytes(selectionRange.Start.ByteIndex - 1, 1);
-                        Caret.Location = new BitLocation(selectionRange.Start.ByteIndex - 1, column.FirstBitIndex);
-                    }
-                    else
-                        Caret.Location = new BitLocation(selectionRange.Start.ByteIndex - 1, 0);
+                    document.RemoveBytes(selectionRange.Start.ByteIndex - 1, 1);
+                    Caret.Location = new BitLocation(selectionRange.Start.ByteIndex - 1, column.FirstBitIndex);
                 }
             }
             else
             {
-                // If caret is not at a left-most cell of a byte, it is more intuitive to have it remove the current byte.
-                if (CanResize)
-                    document.RemoveBytes(selectionRange.Start.ByteIndex, 1);
-
+                document.RemoveBytes(selectionRange.Start.ByteIndex, 1);
                 Caret.Location = selectionRange.Start.ByteIndex == 0
                     ? new BitLocation(0, column.FirstBitIndex)
                     : new BitLocation(selectionRange.Start.ByteIndex, column.FirstBitIndex);
@@ -663,9 +504,7 @@ public class HexEditor : TemplatedControl
         else
         {
             // Otherwise, simply treat as a normal delete.
-            if (CanResize)
-                document.RemoveBytes(selectionRange.Start.ByteIndex, selectionRange.ByteLength);
-
+            document.RemoveBytes(selectionRange.Start.ByteIndex, selectionRange.ByteLength);
             Caret.Location = new BitLocation(selectionRange.Start.ByteIndex, column.FirstBitIndex);
         }
 
@@ -688,36 +527,5 @@ public class HexEditor : TemplatedControl
                 Caret.Location.Max(_selectionAnchorPoint.Value).NextOrMax().AlignUp()
             );
         }
-    }
-
-    private bool IsOverflow(ulong byteIndex) => 
-        !CanResize && Document != null && byteIndex >= Document.ValidRanges.EnclosingRange.ByteLength;
-
-    private void FillSelection(string fill)
-    {
-        if (string.IsNullOrEmpty(fill))
-            return;
-
-        if (Caret.PrimaryColumn is not { } column)
-            return;
-
-        if (Document is not { IsReadOnly: false} document)
-            return;
-
-        var charToFill = fill[0];
-        var selectionRange = Selection.Range;
-        var buffer = new byte[selectionRange.ByteLength];
-
-        Array.Fill(buffer, Convert.ToByte($"{charToFill}{charToFill}", 16));
-        document.WriteBytes(selectionRange.Start.ByteIndex, buffer);
-
-        Caret.Location = new BitLocation(selectionRange.Start.ByteIndex, column.FirstBitIndex);
-    }
-    /// <inheritdoc />
-    protected override void OnGotFocus(GotFocusEventArgs e)
-    {
-        base.OnGotFocus(e);
-        HexView.Focus();
-        e.Handled = true;
     }
 }

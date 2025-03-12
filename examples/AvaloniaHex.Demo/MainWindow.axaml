@@ -5,7 +5,7 @@
         xmlns:avaloniaHex="clr-namespace:AvaloniaHex;assembly=AvaloniaHex"
         xmlns:rendering="clr-namespace:AvaloniaHex.Rendering;assembly=AvaloniaHex"
         xmlns:v="clr-namespace:AvaloniaHex.Demo.Views;assembly=AvaloniaHex.Demo"		
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="450"
 		WindowState="Maximized"
         Width="800"
         Height="600"
@@ -24,83 +24,115 @@
         </ResourceDictionary>
     </Window.Resources>
 
-    <StackPanel Width="300">
+	<Grid RowDefinitions="Auto,10,Auto,10,Auto,10,Auto" Width="1000"
+		  ColumnDefinitions="*" Margin="20">
 
-        <StackPanel Orientation="Horizontal">
-            <Label x:Name="ModeLabel" Content="Overwrite"/>
-            <Separator />
-            <Label x:Name="StatusLabel" />
-        </StackPanel>
-
-		<Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*">
+		<StackPanel>
 			
-            <avaloniaHex:HexEditor
-			    MinHeight="20" 
-				HorizontalAlignment="Stretch"
-                VerticalAlignment="Stretch"
-                x:Name="MainHexEditor"
-                CanResize="False"
-                FillChar="F"
-                BorderBrush="{DynamicResource MainBorderBrush}"
-                BorderThickness="1"
-                FontSize="14"
-                FontFamily="{StaticResource SourceCodeProFont}">
-                <avaloniaHex:HexEditor.Columns>
-                    <rendering:OffsetColumn IsVisible="False"/>
-                    <rendering:HexColumn />
-                    <rendering:BinaryColumn IsVisible="False" />
-                    <rendering:AsciiColumn InvalidCellChar="?" IsVisible="True"/>
-                </avaloniaHex:HexEditor.Columns>
-                <avaloniaHex:HexEditor.ContextMenu>
-                    <ContextMenu>
-                        <MenuItem Header="Copy" Click="CopyOnClick"/>
-                    </ContextMenu>
-                </avaloniaHex:HexEditor.ContextMenu>
-            </avaloniaHex:HexEditor>
+			<avaloniaHex:HexEditor
+				   MinHeight="20"
+				   HorizontalAlignment="Stretch"
+				   VerticalAlignment="Stretch"
+				   x:Name="MainHexEditor"
+				   BorderBrush="{DynamicResource MainBorderBrush}"
+				   BorderThickness="1"
+				   FontSize="14"
+				   FontFamily="{StaticResource SourceCodeProFont}">
+				<avaloniaHex:HexEditor.Columns>
+					<rendering:OffsetColumn IsVisible="False"/>
+					<rendering:HexColumn />
+					<rendering:BinaryColumn IsVisible="False" />
+					<rendering:AsciiColumn InvalidCellChar="?" IsVisible="True"/>
+				</avaloniaHex:HexEditor.Columns>
+			</avaloniaHex:HexEditor>
 
-			<StackPanel Grid.Row="1" Orientation="Horizontal">
-
-				<StackPanel Margin="10">
-					<TextBlock Text="Columns"/>
-					<NumericUpDown Name="BytesPerLine" Minimum="0" FormatString="0" Value="7"/>
-				</StackPanel>
-
-				<StackPanel Margin="10">
-					<TextBlock Text="Bytes"/>
-					<NumericUpDown Name="BytesNum" Minimum="0" FormatString="0"/>
-				</StackPanel>
-
+			<StackPanel Orientation="Horizontal">
+				<Label x:Name="ModeLabel" Content="Overwrite"/>
+				<Separator />
+				<Label x:Name="StatusLabel" />
+			</StackPanel>
+		</StackPanel>
+		
+		<Border Grid.Row="2" BorderThickness="1" 
+				BorderBrush="{StaticResource HighlightBrush}" 
+				Padding="10">
+							
+			<StackPanel>
 				<StackPanel Orientation="Horizontal">
-					<CheckBox Name="ShowOffset" Margin="10">Show Offset</CheckBox>
-					<CheckBox Name="ShowHex" Margin="10" IsChecked="True">Show Hex</CheckBox>
-					<CheckBox Name="ShowBinary" Margin="10">Show Binary</CheckBox>
-					<CheckBox Name="ShowAscii" Margin="10">Show Ascii</CheckBox>
-					<CheckBox Name="ShowStatus" Margin="10" IsChecked="True">Show Status</CheckBox>
-					<CheckBox Name="IsReadOnly" Margin="10">Read Only</CheckBox>
-					<CheckBox Name="IsCyclic" Margin="10">Cyclic</CheckBox>
+						
+					<StackPanel>
+						<TextBlock Text="Columns"/>
+						<NumericUpDown Name="BytesPerLine" Minimum="0" FormatString="0" Value="7"/>
+					</StackPanel>
+
+					<StackPanel Margin="10,0">
+						<TextBlock Text="Bytes"/>
+						<NumericUpDown Name="BytesNum" Minimum="0" FormatString="0"/>
+					</StackPanel>
+
+					<StackPanel Orientation="Horizontal">
+						<CheckBox Name="ShowOffset" Margin="10">Show Offset</CheckBox>
+						<CheckBox Name="ShowHex" Margin="10" IsChecked="True">Show Hex</CheckBox>
+						<CheckBox Name="ShowBinary" Margin="10">Show Binary</CheckBox>
+						<CheckBox Name="ShowAscii" Margin="10">Show Ascii</CheckBox>
+						<Label Content="|"/>
+						<CheckBox Name="IsReadOnly" Margin="10">Read Only</CheckBox>
+						<CheckBox Name="IsCyclic" Margin="10">Cyclic</CheckBox>
+						<Label Content="|"/>
+						<CheckBox Name="ShowMode" Margin="10" IsChecked="True">Show Mode</CheckBox>
+						<CheckBox Name="ShowPosition" Margin="10" IsChecked="True">Show Position</CheckBox>
+					</StackPanel>
+			   
 				</StackPanel>
 
-			    <v:HexBoxView
-                    Text="CAFE"
-                    BytesPerLine="{Binding #BytesPerLine.Value}" 
-				    BytesNum="{Binding #BytesNum.Value}"
-                    IsOffsetColumnVisible="{Binding #ShowOffset.IsChecked}"
-			        IsHexColumnVisible="{Binding #ShowHex.IsChecked}"
-			        IsBinaryColumnVisible="{Binding #ShowBinary.IsChecked}"
-			        IsAsciiColumnVisible="{Binding #ShowAscii.IsChecked}"
-			        IsStatusLineVisible="{Binding #ShowStatus.IsChecked}"/>
+				<StackPanel Width="300" HorizontalAlignment="Left">
+					
+					<v:HexBoxView Margin="0,10"
+						Text="CAFE"
+						BytesPerLine="{Binding #BytesPerLine.Value}"
+						BytesNum="{Binding #BytesNum.Value}"
+						IsOffsetColumnVisible="{Binding #ShowOffset.IsChecked}"
+						IsHexColumnVisible="{Binding #ShowHex.IsChecked}"
+						IsBinaryColumnVisible="{Binding #ShowBinary.IsChecked}"
+						IsAsciiColumnVisible="{Binding #ShowAscii.IsChecked}"
+						IsModeLabelVisible="{Binding #ShowMode.IsChecked}"
+						IsBytesLabelVisible="{Binding #ShowPosition.IsChecked}"/>
+				</StackPanel>
 				
 			</StackPanel>
-
-			<StackPanel Grid.Row="2">
-				<Label Content="Empty"/>
-				<v:HexBoxView/>
 				
-				<Label Content="Cyclic" Margin="0,10"/>
-				<v:HexBoxView/>
-				
+		</Border>			
+			
+		<StackPanel Grid.Row="4">
+			<StackPanel.Styles>
+				<Style Selector="v|HexBoxView">
+					<Setter Property="IsBytesLabelVisible" Value="True"/>
+				</Style>
+				<Style Selector="v|HexBoxView2">
+					<Setter Property="IsBytesLabelVisible" Value="True"/>
+				</Style>
+			</StackPanel.Styles>
+			<StackPanel Width="300" HorizontalAlignment="Left">
+				<Label Content="Limited (4 bytes)" Margin="0,10"/>
+				<v:HexBoxView BytesNum="4" Text="CAFEBABE"/>
 			</StackPanel>
-		</Grid>
 
-    </StackPanel>
+			<StackPanel Width="300" HorizontalAlignment="Left">
+				<Label Content="Limited (4 bytes) and Cyclic" Margin="0,10"/>
+				<v:HexBoxView BytesNum="4" IsCyclic="True" Text="CAFEBABE"/>
+			</StackPanel>
+
+			<StackPanel Width="300" HorizontalAlignment="Left">
+				<Label Content="Limited2 (4 bytes)" Margin="0,10"/>
+				<v:HexBoxView2 BytesNum="4" Text="CAFEBABE"/>
+			</StackPanel>
+
+			<StackPanel Width="300" HorizontalAlignment="Left">
+				<Label Content="Limited2 (4 bytes) and Cyclic" Margin="0,10"/>
+				<v:HexBoxView2 BytesNum="4" IsCyclic="True" Text="CAFEBABE"/>
+			</StackPanel>
+				
+		</StackPanel>
+		
+	</Grid>
 </Window>

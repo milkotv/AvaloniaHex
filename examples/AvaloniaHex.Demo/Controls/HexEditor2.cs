@@ -142,7 +142,7 @@ public class HexEditor2 : HexEditor
         UpdateSelection(Caret.Location, false);
     }
 
-    private async void OnPreviewKeyDown(object? sender, KeyEventArgs e)
+    private void OnPreviewKeyDown(object? sender, KeyEventArgs e)
     {
         var oldLocation = Caret.Location;
         bool isShiftDown = (e.KeyModifiers & KeyModifiers.Shift) != 0;
@@ -341,5 +341,13 @@ public class HexEditor2 : HexEditor
     private void UpdateSelection(BitLocation from, bool expand)
     {
         this.Call("UpdateSelection", [typeof(BitLocation), typeof(bool)], from, expand);
+    }
+
+    /// <inheritdoc />
+    protected override void OnGotFocus(GotFocusEventArgs e)
+    {
+        base.OnGotFocus(e);
+        HexView.Focus();
+        e.Handled = true;
     }
 }

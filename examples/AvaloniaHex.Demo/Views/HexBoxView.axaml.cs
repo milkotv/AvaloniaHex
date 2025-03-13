@@ -69,9 +69,9 @@ namespace AvaloniaHex.Demo.Views
             this.GetObservable(IsCyclicProperty)
               .Subscribe(x => HexBox.IsCyclic = x);
 
-            this.GetObservable(IsModeLabelVisibleProperty)
+            this.GetObservable(IsLabelModeVisibleProperty)
                 .Subscribe(_ => UpdateLabels());
-            this.GetObservable(IsBytesLabelVisibleProperty)
+            this.GetObservable(IsLabelBytesVisibleProperty)
                .Subscribe(_ => UpdateLabels());
 
             this.GetObservable(IsOffsetColumnVisibleProperty)
@@ -164,20 +164,20 @@ namespace AvaloniaHex.Demo.Views
             set => SetValue(IsAsciiColumnVisibleProperty, value);
         }
 
-        public static readonly StyledProperty<bool> IsBytesLabelVisibleProperty =
-            AvaloniaProperty.Register<HexBoxView, bool>(nameof(IsBytesLabelVisible), false);
-        public bool IsBytesLabelVisible
+        public static readonly StyledProperty<bool> IsLabelBytesVisibleProperty =
+            AvaloniaProperty.Register<HexBoxView, bool>(nameof(IsLabelBytesVisible), false);
+        public bool IsLabelBytesVisible
         {
-            get => GetValue(IsBytesLabelVisibleProperty);
-            set => SetValue(IsBytesLabelVisibleProperty, value);
+            get => GetValue(IsLabelBytesVisibleProperty);
+            set => SetValue(IsLabelBytesVisibleProperty, value);
         }
 
-        public static readonly StyledProperty<bool> IsModeLabelVisibleProperty =
-            AvaloniaProperty.Register<HexBoxView, bool>(nameof(IsModeLabelVisible), false);
-        public bool IsModeLabelVisible
+        public static readonly StyledProperty<bool> IsLabelModeVisibleProperty =
+            AvaloniaProperty.Register<HexBoxView, bool>(nameof(IsLabelModeVisible), false);
+        public bool IsLabelModeVisible
         {
-            get => GetValue(IsModeLabelVisibleProperty);
-            set => SetValue(IsModeLabelVisibleProperty, value);
+            get => GetValue(IsLabelModeVisibleProperty);
+            set => SetValue(IsLabelModeVisibleProperty, value);
         }
 
         #endregion
@@ -278,8 +278,8 @@ namespace AvaloniaHex.Demo.Views
         private void CaretOnModeChanged(object? sender, EventArgs e) => UpdateLabels();
         private void UpdateLabels()
         {
-            BytesLabel.IsVisible = IsBytesLabelVisible;
-            if (IsBytesLabelVisible)
+            BytesLabel.IsVisible = IsLabelBytesVisible;
+            if (IsLabelBytesVisible)
             {
                 if (HexBox.Selection.Range.ByteLength > 1)
                     BytesLabel.Text =  $"Selected {HexBox.Selection.Range.ByteLength} bytes [{HexBox.Selection.Range.Start.ByteIndex + 1} - {HexBox.Selection.Range.End.ByteIndex}]";
@@ -287,8 +287,8 @@ namespace AvaloniaHex.Demo.Views
                     BytesLabel.Text = $"Byte {HexBox.Caret.Location.ByteIndex + 1}/{Math.Max(HexBox.Document!.Length, HexBox.Caret.Location.ByteIndex + 1)}";
             }
 
-            ModeLabel.IsVisible = IsModeLabelVisible;
-            if (IsModeLabelVisible)
+            ModeLabel.IsVisible = IsLabelModeVisible;
+            if (IsLabelModeVisible)
                 ModeLabel.Text = HexBox.Caret.Mode == EditingMode.Insert ? "INS" : "OVR";
         }
     }

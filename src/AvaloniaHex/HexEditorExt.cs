@@ -116,7 +116,7 @@ public class HexEditorExt : HexEditor
         if (!CanResize && Selection.Range.ByteLength > 1)
         {
             FillSelection(e.Text);
-            UpdateSelection(Caret.Location, false);
+            DoUpdateSelection(Caret.Location, false);
             return;
         }
 
@@ -131,14 +131,14 @@ public class HexEditorExt : HexEditor
             if (IsCyclic)
             {
                 Caret.GoToStartOfLine();
-                UpdateSelection(location, false);
+                DoUpdateSelection(location, false);
             }
             return;
         }
 
         // Update caret location.
         Caret.Location = location;
-        UpdateSelection(Caret.Location, false);
+        DoUpdateSelection(Caret.Location, false);
     }
 
     private void OnPreviewKeyDown(object? sender, KeyEventArgs e)
@@ -152,7 +152,7 @@ public class HexEditorExt : HexEditor
                 if (IsCyclic && oldLocation.ByteIndex == 0 && oldLocation.BitIndex == 4)
                 {
                     Caret.GoToEndOfLine();
-                    UpdateSelection(oldLocation, isShiftDown);
+                    DoUpdateSelection(oldLocation, isShiftDown);
                     e.Handled = true;
                 }
                 break;            
@@ -163,7 +163,7 @@ public class HexEditorExt : HexEditor
                     if (IsCyclic)
                     {
                         Caret.GoToStartOfLine();
-                        UpdateSelection(oldLocation, isShiftDown);
+                        DoUpdateSelection(oldLocation, isShiftDown);
                     }
                     e.Handled = true;
                 }                                             
@@ -175,7 +175,7 @@ public class HexEditorExt : HexEditor
                     if (IsCyclic)
                     {
                         Caret.GoToEndOfLine();
-                        UpdateSelection(oldLocation, isShiftDown);
+                        DoUpdateSelection(oldLocation, isShiftDown);
                     }
                     e.Handled = true;
                 }              
@@ -187,7 +187,7 @@ public class HexEditorExt : HexEditor
                     if (IsCyclic)
                     {
                         Caret.GoToEndOfLine();
-                        UpdateSelection(oldLocation, isShiftDown);
+                        DoUpdateSelection(oldLocation, isShiftDown);
                     }
                     e.Handled = true;
                 }               
@@ -337,7 +337,7 @@ public class HexEditorExt : HexEditor
         Caret.Location = new BitLocation(selectionRange.Start.ByteIndex, column.FirstBitIndex);
     }
 
-    private void UpdateSelection(BitLocation from, bool expand)
+    private void DoUpdateSelection(BitLocation from, bool expand)
     {
         this.Call("UpdateSelection", [typeof(BitLocation), typeof(bool)], from, expand);
     }

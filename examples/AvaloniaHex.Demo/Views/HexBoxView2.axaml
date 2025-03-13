@@ -33,9 +33,29 @@
 		</avaloniaHex:HexEditorExt>
 
 		<Grid Grid.Row="1">
-			<TextBlock Name="ModeLabel" HorizontalAlignment="Left" FontSize="10"/>
-			<TextBlock Name="BytesLabel" HorizontalAlignment="Right" FontSize="10"/>
+			<TextBlock Name="LabelMode" HorizontalAlignment="Left" FontSize="10"/>
+			<TextBlock Name="LabelBytes" HorizontalAlignment="Right" FontSize="10"/>
 		</Grid>
+
+		<Grid.ContextMenu>
+			<ContextMenu Name="ContextMenu">
+				<MenuItem Header="Bytes Per Line">
+					<NumericUpDown Name="MenuBytesPerLine"
+						Width="50"
+						Minimum="1"
+						Maximum="64"
+						FormatString="0" />
+				</MenuItem>
+				<MenuItem Header="View">
+					<CheckBox Name="MenuShowOffset">Offset</CheckBox>
+					<CheckBox Name="MenuShowHex" IsChecked="True">Hex</CheckBox>
+					<CheckBox Name="MenuShowBinary">Binary</CheckBox>
+					<CheckBox Name="MenuShowAscii">Ascii</CheckBox>
+					<CheckBox Name="MenuShowMode" IsChecked="True">Caret Mode</CheckBox>
+					<CheckBox Name="MenuShowPosition" IsChecked="True">Caret Position</CheckBox>
+				</MenuItem>
+			</ContextMenu>
+		</Grid.ContextMenu>
 	</Grid>
 	
 </UserControl>

@@ -4,7 +4,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:avaloniaHex="clr-namespace:AvaloniaHex;assembly=AvaloniaHex"
         xmlns:rendering="clr-namespace:AvaloniaHex.Rendering;assembly=AvaloniaHex"
-        xmlns:v="clr-namespace:AvaloniaHex.Demo.Views;assembly=AvaloniaHex.Demo"		
+        xmlns:v="clr-namespace:AvaloniaHex.Demo.Views;assembly=AvaloniaHex.Demo"
         mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="450"
 		WindowState="Maximized"
         Width="800"
@@ -75,19 +75,19 @@
 						<CheckBox Name="ShowHex" Margin="10" IsChecked="True">Show Hex</CheckBox>
 						<CheckBox Name="ShowBinary" Margin="10">Show Binary</CheckBox>
 						<CheckBox Name="ShowAscii" Margin="10">Show Ascii</CheckBox>
-						<Label Content="|"/>
+						<Label Content="|" VerticalAlignment="Center"/>
 						<CheckBox Name="IsReadOnly" Margin="10">Read Only</CheckBox>
 						<CheckBox Name="IsCyclic" Margin="10">Cyclic</CheckBox>
-						<Label Content="|"/>
+						<Label Content="|" VerticalAlignment="Center"/>
 						<CheckBox Name="ShowMode" Margin="10" IsChecked="True">Show Mode</CheckBox>
 						<CheckBox Name="ShowPosition" Margin="10" IsChecked="True">Show Position</CheckBox>
 					</StackPanel>
 			   
 				</StackPanel>
 
-				<StackPanel Width="300" HorizontalAlignment="Left">
+				<StackPanel HorizontalAlignment="Stretch">
 					
-					<v:HexBoxView Margin="0,10"
+					<v:HexBoxView Margin="0,10" Name="HexBoxView1"
 						Text="CAFE"
 						BytesPerLine="{Binding #BytesPerLine.Value}"
 						BytesNum="{Binding #BytesNum.Value}"
@@ -95,8 +95,9 @@
 						IsHexColumnVisible="{Binding #ShowHex.IsChecked}"
 						IsBinaryColumnVisible="{Binding #ShowBinary.IsChecked}"
 						IsAsciiColumnVisible="{Binding #ShowAscii.IsChecked}"
-						IsModeLabelVisible="{Binding #ShowMode.IsChecked}"
-						IsBytesLabelVisible="{Binding #ShowPosition.IsChecked}"/>
+						IsLabelModeVisible="{Binding #ShowMode.IsChecked}"
+						IsLabelBytesVisible="{Binding #ShowPosition.IsChecked}">					
+				</v:HexBoxView>
 				</StackPanel>
 				
 			</StackPanel>
@@ -106,10 +107,10 @@
 		<StackPanel Grid.Row="4">
 			<StackPanel.Styles>
 				<Style Selector="v|HexBoxView">
-					<Setter Property="IsBytesLabelVisible" Value="True"/>
+					<Setter Property="IsLabelBytesVisible" Value="True"/>
 				</Style>
 				<Style Selector="v|HexBoxView2">
-					<Setter Property="IsBytesLabelVisible" Value="True"/>
+					<Setter Property="IsLabelBytesVisible" Value="True"/>
 				</Style>
 			</StackPanel.Styles>
 			<StackPanel Width="300" HorizontalAlignment="Left">
@@ -124,7 +125,7 @@
 
 			<StackPanel Width="300" HorizontalAlignment="Left">
 				<Label Content="Limited2 (4 bytes)" Margin="0,10"/>
-				<v:HexBoxView2 BytesNum="4" Text="CAFEBABE"/>
+				<v:HexBoxView2 BytesNum="4" Text="CAFEBABE" IsMenuVisible="True"/>
 			</StackPanel>
 
 			<StackPanel Width="300" HorizontalAlignment="Left">

@@ -7,6 +7,7 @@ using AvaloniaHex.Editing;
 using AvaloniaHex.Rendering;
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Reactive.Linq;
 using System.Runtime.CompilerServices;
 
@@ -52,9 +53,11 @@ namespace AvaloniaHex.Demo.Views
             HexBox.Selection.RangeChanged += SelectionOnRangeChanged;
             HexBox.Caret.ModeChanged += CaretOnModeChanged;
             HexBox.Caret.LocationChanged += CaretOnLocationChanged;
-            MenuBytesPerLine.PropertyChanged += OnMenuBytesPerLineChanged;
-            MenuBytesPerLine.Value = BytesPerLine;
+            HexBox.HexView.ScrollInvalidated += OnScrollInvalidated;
 
+            MenuBytesPerLineAuto.PropertyChanged += OnMenuBytesPerLineChanged;
+            MenuBytesPerLine.PropertyChanged += OnMenuBytesPerLineChanged;
+            
             this.GetObservable(TextProperty)
                 .Subscribe(x =>
                 {
@@ -88,11 +91,14 @@ namespace AvaloniaHex.Demo.Views
                 .Subscribe(x => ContextMenu.IsVisible = x);
 
             this.GetObservable(BytesPerLineProperty)
-                .Where(x => x > 0)
                 .Subscribe(x =>
                 {
-                    HexBox.HexView.BytesPerLine = (int?)x;
-                    MenuBytesPerLine.Value = x;
+                    HexBox.HexView.BytesPerLine = x;
+                    if (x != null)
+                    {
+                        MenuBytesPerLine.Value = x;
+                        MenuBytesPerLineAuto.IsChecked = false;
+                    }
                 });
 
             this.GetObservable(IsOffsetColumnVisibleProperty)
@@ -106,14 +112,16 @@ namespace AvaloniaHex.Demo.Views
 
             this.GetObservable(IsAsciiColumnVisibleProperty)
                 .Subscribe(x => AsciiColumn.IsVisible = x);
-        }
+        }       
 
         #region Fields
         private readonly int _labelsFontSize = 10;
+        private readonly int _defaultBytesPerLine = 8;
         private readonly RangesHighlighter _changesHighlighter;
         private readonly ZeroesHighlighter _zeroesHighlighter;
         private readonly InvalidRangesHighlighter _invalidRangesHighlighter;
         private DynamicBinaryDocument? _document;
+        private Rect? _lineBounds = null;
         #endregion
 
         #region Properties
@@ -128,8 +136,8 @@ namespace AvaloniaHex.Demo.Views
         public string Hex =>
             Text.Replace(" ", string.Empty) ?? string.Empty;
 
-        public static readonly StyledProperty<uint> BytesPerLineProperty = AvaloniaProperty.Register<HexBoxView, uint>(nameof(BytesPerLine), 8);
-        public uint BytesPerLine
+        public static readonly StyledProperty<int?> BytesPerLineProperty = AvaloniaProperty.Register<HexBoxView, int?>(nameof(BytesPerLine), null);
+        public int? BytesPerLine
         {
             get => GetValue(BytesPerLineProperty);
             set => SetValue(BytesPerLineProperty, value);
@@ -226,6 +234,8 @@ namespace AvaloniaHex.Demo.Views
             // Create the document first!
             UpdateText(Text);
 
+            //MenuBytesPerLine.Value = BytesPerLine ?? 8;
+
             MenuShowOffset.IsChecked = IsOffsetColumnVisible;
             MenuShowHex.IsChecked = IsHexColumnVisible;
             MenuShowBinary.IsChecked = IsBinaryColumnVisible;
@@ -239,14 +249,16 @@ namespace AvaloniaHex.Demo.Views
 
         private void OnMenuBytesPerLineChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
         {
-            if (sender is NumericUpDown numericUpDown && e.Property.Name == "Value")
-                BytesPerLine = (uint)numericUpDown.Value!;
+            if (sender is NumericUpDown numericUpDown && e.Property.Name == "Value" && numericUpDown?.Value != null)
+                BytesPerLine = (int)numericUpDown.Value!;
+            else if (sender is CheckBox checkBox && e.Property.Name == "IsChecked")
+                BytesPerLine = (bool)checkBox.IsChecked! ? null : ((int?)MenuBytesPerLine?.Value ?? _defaultBytesPerLine);
         }
 
         private void UpdateText(string hex)
         {
             _document = new DynamicBinaryDocument(Convert.FromHexString((hex ?? string.Empty)));
-            HexBox.HexView.Document = _document;
+            HexBox.HexView.Document = _document;            
         }
 
         /// <summary>
@@ -284,8 +296,6 @@ namespace AvaloniaHex.Demo.Views
 
             if (IsLabelModeVisible)
                 LabelMode.Text = HexBox.Caret.Mode == EditingMode.Insert ? "INS" : "OVR";
-
-            Debug.Print($"{IsLoaded} {caller}: IsLabelPositionVisible: {IsLabelPositionVisible}, {LabelMode.Text}, {LabelPosition.Text}");
         }
       
 
@@ -301,9 +311,7 @@ namespace AvaloniaHex.Demo.Views
         }
 
         private void DocumentOnChanged(object? sender, BinaryDocumentChange change)
-        {
-            Debug.Print($"HexBox: {HexBox.Width}, {HexBox.Height}");
-
+        {            
             var doc = (sender as IBinaryDocument)!;
             switch (change.Type)
             {
@@ -318,6 +326,21 @@ namespace AvaloniaHex.Demo.Views
 
                 default:
                     throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        private void OnScrollInvalidated(object? sender, EventArgs e)
+        {
+            if (HexBox.IsLoaded)
+            {
+                if (sender is HexView view)
+                {
+                    Debug.Print($"Scroll invalidated. Height: {view.Extent.Height}");
+                    if (_lineBounds == null && HexBox.HexView.VisualLines.Any())
+                        _lineBounds = HexBox.HexView.VisualLines[0].Bounds;
+
+                    HexBox.HexView.Height = Math.Max(view.Extent.Height, 1) * _lineBounds!.Value.Height;
+                }
             }
         }
 

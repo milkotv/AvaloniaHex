@@ -5,7 +5,7 @@
         xmlns:avaloniaHex="clr-namespace:AvaloniaHex;assembly=AvaloniaHex"
         xmlns:rendering="clr-namespace:AvaloniaHex.Rendering;assembly=AvaloniaHex"
         xmlns:v="clr-namespace:AvaloniaHex.Demo.Views;assembly=AvaloniaHex.Demo"
-        mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="450"
+        mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="450" 
 		WindowState="Maximized"
         Width="800"
         Height="600"
@@ -74,8 +74,8 @@
 				</Style>				
 			</StackPanel.Styles>
 
-			<Border BorderThickness="1" BorderBrush="{StaticResource HighlightBrush}" Margin="0,10" Padding="10">				
-				<StackPanel HorizontalAlignment="Left">
+			<Border Width="400" BorderThickness="1" BorderBrush="{StaticResource HighlightBrush}" Margin="0,10" Padding="10" HorizontalAlignment="Left">				
+				<StackPanel HorizontalAlignment="Stretch">
 					<Label Content="Not Limited" Margin="0,10"/>
 					<v:HexBoxView2 Text="CA"/>
 				</StackPanel>

@@ -14,7 +14,7 @@
 		</Style>
 	</UserControl.Styles>
 	
-	<Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*" MinWidth="200">
+	<Grid RowDefinitions="*,Auto" ColumnDefinitions="*" MinWidth="200">
 
 		<avaloniaHex:HexEditorExt MinHeight="20"
 			HorizontalAlignment="Stretch"
@@ -40,19 +40,22 @@
 		<Grid.ContextMenu>
 			<ContextMenu Name="ContextMenu">
 				<MenuItem Header="Bytes Per Line">
-					<NumericUpDown Name="MenuBytesPerLine"
-						Width="50"
-						Minimum="1"
-						Maximum="64"
-						FormatString="0" />
+					<Grid RowDefinitions="Auto,5,*" Margin="0,10,0,5">						
+						<CheckBox Name="MenuBytesPerLineAuto" IsChecked="True" Content="Auto"/>
+						<NumericUpDown Name="MenuBytesPerLine" IsVisible="{Binding !#MenuBytesPerLineAuto.IsChecked}" Grid.Row="2"
+							Width="50"
+							Minimum="1"
+							Maximum="64"
+							FormatString="0" />
+					</Grid>
 				</MenuItem>
 				<MenuItem Header="View">
-					<CheckBox Name="MenuShowOffset">Offset</CheckBox>
-					<CheckBox Name="MenuShowHex" IsChecked="True">Hex</CheckBox>
-					<CheckBox Name="MenuShowBinary">Binary</CheckBox>
-					<CheckBox Name="MenuShowAscii">Ascii</CheckBox>
-					<CheckBox Name="MenuShowMode">Caret Mode</CheckBox>
-					<CheckBox Name="MenuShowPosition">Caret Position</CheckBox>
+					<CheckBox Name="MenuShowOffset" Content="Offset"/>
+					<CheckBox Name="MenuShowHex" Content="Hex" IsChecked="True"/>
+					<CheckBox Name="MenuShowBinary" Content="Binary"/>
+					<CheckBox Name="MenuShowAscii" Content="Ascii"/>
+					<CheckBox Name="MenuShowMode" Content="Caret Mode"/>
+					<CheckBox Name="MenuShowPosition" Content="Caret Position"/>
 				</MenuItem>
 			</ContextMenu>
 		</Grid.ContextMenu>

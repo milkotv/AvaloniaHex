@@ -25,10 +25,10 @@
 			FontSize="14"
 			FontFamily="{StaticResource SourceCodeProFont}">
 			<avaloniaHex:HexEditorExt.Columns>
-				<rendering:OffsetColumn IsVisible="False"/>
-				<rendering:HexColumn />
-				<rendering:BinaryColumn IsVisible="False" />
-				<rendering:AsciiColumn InvalidCellChar="?" IsVisible="False"/>
+				<rendering:OffsetColumn Name="OffsetColumn" IsVisible="{Binding #MenuShowOffset.IsChecked}"/>
+				<rendering:HexColumn Name="HexColumn" IsVisible="{Binding #MenuShowHex.IsChecked}"/>
+				<rendering:BinaryColumn Name="BinaryColumn" IsVisible="{Binding #MenuShowBinary.IsChecked}" />
+				<rendering:AsciiColumn Name="AsciiColumn" IsVisible="{Binding #MenuShowAscii.IsChecked}" InvalidCellChar="?"/>
 			</avaloniaHex:HexEditorExt.Columns>			
 		</avaloniaHex:HexEditorExt>
 
@@ -51,8 +51,8 @@
 					<CheckBox Name="MenuShowHex" IsChecked="True">Hex</CheckBox>
 					<CheckBox Name="MenuShowBinary">Binary</CheckBox>
 					<CheckBox Name="MenuShowAscii">Ascii</CheckBox>
-					<CheckBox Name="MenuShowMode" IsChecked="True">Caret Mode</CheckBox>
-					<CheckBox Name="MenuShowPosition" IsChecked="True">Caret Position</CheckBox>
+					<CheckBox Name="MenuShowMode">Caret Mode</CheckBox>
+					<CheckBox Name="MenuShowPosition">Caret Position</CheckBox>
 				</MenuItem>
 			</ContextMenu>
 		</Grid.ContextMenu>

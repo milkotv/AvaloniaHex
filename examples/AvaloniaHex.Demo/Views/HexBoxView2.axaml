@@ -19,7 +19,7 @@
 		<avaloniaHex:HexEditorExt MinHeight="20"
 			HorizontalAlignment="Stretch"
 			VerticalAlignment="Stretch"			
-			x:Name="HexBoxExt"
+			x:Name="HexBox"
 			BorderBrush="{DynamicResource MainBorderBrush}"
 			BorderThickness="1"
 			FontSize="14"
@@ -34,7 +34,7 @@
 
 		<Grid Grid.Row="1">
 			<TextBlock Name="LabelMode" HorizontalAlignment="Left" FontSize="10"/>
-			<TextBlock Name="LabelBytes" HorizontalAlignment="Right" FontSize="10"/>
+			<TextBlock Name="LabelPosition" HorizontalAlignment="Right" FontSize="10"/>
 		</Grid>
 
 		<Grid.ContextMenu>

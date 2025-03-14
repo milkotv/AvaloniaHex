@@ -8,6 +8,7 @@ using AvaloniaHex.Rendering;
 using System;
 using System.Diagnostics;
 using System.Reactive.Linq;
+using System.Runtime.CompilerServices;
 
 namespace AvaloniaHex.Demo.Views
 {
@@ -17,6 +18,9 @@ namespace AvaloniaHex.Demo.Views
         {
             InitializeComponent();
             ConfigureContextMenu();
+
+            // Default. Can change if !CanResize
+            HexBox.Caret.Mode = EditingMode.Insert;
 
             // Create some custom highlighters.
             _zeroesHighlighter = new ZeroesHighlighter
@@ -35,35 +39,33 @@ namespace AvaloniaHex.Demo.Views
             };
 
             // Enable the changes highlighter.
-            HexBoxExt.HexView.LineTransformers.Add(_changesHighlighter);
-            HexBoxExt.HexView.LineTransformers.Add(_invalidRangesHighlighter);
+            HexBox.HexView.LineTransformers.Add(_changesHighlighter);
+            HexBox.HexView.LineTransformers.Add(_invalidRangesHighlighter);
 
             // Divide each 8 bytes with a dashed line and separate colors.
-            var layer = HexBoxExt.HexView.Layers.Get<CellGroupsLayer>();
+            var layer = HexBox.HexView.Layers.Get<CellGroupsLayer>();
             layer.BytesPerGroup = 8;
             layer.Backgrounds.Add(new SolidColorBrush(Colors.Gray, 0.1D));
             layer.Backgrounds.Add(null);
             layer.Border = new Pen(Brushes.Gray, dashStyle: DashStyle.Dash);
 
-            HexBoxExt.DocumentChanged += HexBoxOnDocumentChanged;
-            HexBoxExt.Selection.RangeChanged += SelectionOnRangeChanged;
-            HexBoxExt.Caret.ModeChanged += CaretOnModeChanged;
-            HexBoxExt.Caret.LocationChanged += CaretOnLocationChanged;
+            HexBox.DocumentChanged += HexBoxOnDocumentChanged;
+            HexBox.Selection.RangeChanged += SelectionOnRangeChanged;
+            HexBox.Caret.ModeChanged += CaretOnModeChanged;
+            HexBox.Caret.LocationChanged += CaretOnLocationChanged;
 
             this.GetObservable(TextProperty)
-              .Subscribe(x => UpdateText(x));
-
-            this.GetObservable(TextProperty)
-                .Subscribe(_ => RaisePropertyChanged(HexProperty, null, Hex));
-
-            this.GetObservable(BytesPerLineProperty)
-                .Where(x => x > 0)
-                .Subscribe(x => HexBoxExt.HexView.BytesPerLine = (int?)x);
+                .Subscribe(x => {
+                    UpdateText(x);
+                    RaisePropertyChanged(HexProperty, null, x);
+                });
 
             this.GetObservable(BytesNumProperty)
                 .Subscribe(x =>
                 {
-                    HexBoxExt.CanResize = x == 0;
+                    HexBox.CanResize = x == 0;
+                    if (!HexBox.CanResize)
+                        HexBox.Caret.Mode = EditingMode.Overwrite;
                     UpdateBytesNum(x);
                 });
 
@@ -72,21 +74,34 @@ namespace AvaloniaHex.Demo.Views
                 .Subscribe(x => _document!.IsReadOnly = x);
 
             this.GetObservable(IsCyclicProperty)
-              .Subscribe(x => HexBoxExt.IsCyclic = x);
+              .Subscribe(x => HexBox.IsCyclic = x);
 
             this.GetObservable(IsLabelModeVisibleProperty)
-                .Subscribe(_ => UpdateLabels());
-            this.GetObservable(IsLabelBytesVisibleProperty)
-               .Subscribe(_ => UpdateLabels());
+                .Subscribe(x => LabelMode.IsVisible = x);
+
+            this.GetObservable(IsLabelPositionVisibleProperty)
+                .Subscribe(x => LabelPosition.IsVisible = x);
+
             this.GetObservable(IsMenuVisibleProperty)
                 .Subscribe(x => ContextMenu.IsVisible = x);
 
+            this.GetObservable(BytesPerLineProperty)
+                .Where(x => x > 0)
+                .Subscribe(x =>
+                {
+                    HexBox.HexView.BytesPerLine = (int?)x;
+                    MenuBytesPerLine.Value = x;
+                });
+
             this.GetObservable(IsOffsetColumnVisibleProperty)
                 .Subscribe(x => ToggleColumn<OffsetColumn>(x));
+
             this.GetObservable(IsHexColumnVisibleProperty)
                 .Subscribe(x => ToggleColumn<HexColumn>(x));
+
             this.GetObservable(IsBinaryColumnVisibleProperty)
                 .Subscribe(x => ToggleColumn<BinaryColumn>(x));
+
             this.GetObservable(IsAsciiColumnVisibleProperty)
                 .Subscribe(x => ToggleColumn<AsciiColumn>(x));
         }
@@ -171,12 +186,12 @@ namespace AvaloniaHex.Demo.Views
             set => SetValue(IsAsciiColumnVisibleProperty, value);
         }
 
-        public static readonly StyledProperty<bool> IsLabelBytesVisibleProperty =
-            AvaloniaProperty.Register<HexBoxView, bool>(nameof(IsLabelBytesVisible), false);
-        public bool IsLabelBytesVisible
+        public static readonly StyledProperty<bool> IsLabelPositionVisibleProperty =
+            AvaloniaProperty.Register<HexBoxView, bool>(nameof(IsLabelPositionVisible), false);
+        public bool IsLabelPositionVisible
         {
-            get => GetValue(IsLabelBytesVisibleProperty);
-            set => SetValue(IsLabelBytesVisibleProperty, value);
+            get => GetValue(IsLabelPositionVisibleProperty);
+            set => SetValue(IsLabelPositionVisibleProperty, value);
         }
 
         public static readonly StyledProperty<bool> IsLabelModeVisibleProperty =
@@ -204,20 +219,41 @@ namespace AvaloniaHex.Demo.Views
         protected override void OnLoaded(RoutedEventArgs e)
         {
             base.OnLoaded(e);           
-            HexBoxExt.Document = new DynamicBinaryDocument();
-            HexBoxExt.Caret.Mode = EditingMode.Insert;
+            HexBox.Document = new DynamicBinaryDocument();            
 
             // Create the document first!
             UpdateText(Text);
 
-            LabelBytes.FontSize = _labelsFontSize;
+            MenuShowOffset.IsChecked = IsOffsetColumnVisible;
+            MenuShowHex.IsChecked = IsHexColumnVisible;
+            MenuShowBinary.IsChecked = IsBinaryColumnVisible;
+            MenuShowAscii.IsChecked = IsAsciiColumnVisible;
+            MenuShowMode.IsChecked = IsLabelModeVisible;
+            MenuShowPosition.IsChecked = IsLabelPositionVisible;
+
+            LabelPosition.FontSize = _labelsFontSize;
             LabelMode.FontSize = _labelsFontSize;
+        }
+
+        private void ConfigureContextMenu()
+        {
+            var checkBoxes = new CheckBox[]
+            {
+                MenuShowOffset, MenuShowHex, MenuShowBinary, MenuShowAscii,
+                MenuShowMode, MenuShowPosition
+            };
+
+            foreach (var cb in checkBoxes)
+                cb.IsCheckedChanged += OnMenuCheckBoxChanged;
+
+            MenuBytesPerLine.PropertyChanged += OnMenuBytesPerLineChanged;
+            MenuBytesPerLine.Value = BytesPerLine;
         }
 
         private void UpdateText(string hex)
         {
             _document = new DynamicBinaryDocument(Convert.FromHexString((hex ?? string.Empty)));
-            HexBoxExt.HexView.Document = _document;
+            HexBox.HexView.Document = _document;
         }
 
         /// <summary>
@@ -226,30 +262,45 @@ namespace AvaloniaHex.Demo.Views
         /// <param name="bytesNum"></param>
         private void UpdateBytesNum(uint? _bytesNum)
         {
-            if((_bytesNum ?? 0) == 0 || _document == null || _document.Length == 0)
-                return;
-
-            var bytesNum = _bytesNum!.Value;
-            if (bytesNum > _document.Length)
+            if ((_bytesNum ?? 0) > 0 && _document?.Length > 0)
             {
-                var padding = new byte[bytesNum - _document.Length];
-                Array.Fill(padding, Convert.ToByte(HexBoxExt.FillChar.ToString(), 16));
-                _document.InsertBytes(_document.Length, padding);
-            }
-            else if (bytesNum < _document.Length)
-            {
-                _document.RemoveBytes(bytesNum - 1, _document.Length - bytesNum);
+                var bytesNum = _bytesNum!.Value;
+                if (bytesNum > _document.Length)
+                {
+                    var padding = new byte[bytesNum - _document.Length];
+                    Array.Fill(padding, Convert.ToByte(HexBox.FillChar.ToString(), 16));
+                    _document.InsertBytes(_document.Length, padding);
+                }
+                else if (bytesNum < _document.Length)
+                {
+                    _document.RemoveBytes(bytesNum - 1, _document.Length - bytesNum);
+                }
             }
             UpdateLabels();
         }
 
+        private void UpdateLabels([CallerMemberName] string caller = "")
+        {
+            if (IsLabelPositionVisible)
+            {
+                if (HexBox.Selection.Range.ByteLength > 1)
+                    LabelPosition.Text = $"Selected {HexBox.Selection.Range.ByteLength} bytes [{HexBox.Selection.Range.Start.ByteIndex + 1} - {HexBox.Selection.Range.End.ByteIndex}]";
+                else if (HexBox.Selection.Range.ByteLength > 0)
+                    LabelPosition.Text = $"Byte {HexBox.Caret.Location.ByteIndex + 1}/{Math.Max(HexBox.Document!.Length, HexBox.Caret.Location.ByteIndex + 1)}";
+            }
+
+            if (IsLabelModeVisible)
+                LabelMode.Text = HexBox.Caret.Mode == EditingMode.Insert ? "INS" : "OVR";
+
+            Debug.Print($"{IsLoaded} {caller}: IsLabelPositionVisible: {IsLabelPositionVisible}, {LabelMode.Text}, {LabelPosition.Text}");
+        }
 
         private void ToggleColumn<TColumn>(bool isVisible)
             where TColumn : Column
         {
-            var column = HexBoxExt.Columns.Get<TColumn>();
+            var column = HexBox.Columns.Get<TColumn>();
             column.IsVisible = isVisible;
-            column.InvalidateVisual();
+            HexBox.InvalidateVisual();
         }
 
         private void HexBoxOnDocumentChanged(object? sender, DocumentChangedEventArgs e)
@@ -265,7 +316,7 @@ namespace AvaloniaHex.Demo.Views
 
         private void DocumentOnChanged(object? sender, BinaryDocumentChange change)
         {
-            Debug.Print($"HexBox: {HexBoxExt.Width}, {HexBoxExt.Height}");
+            Debug.Print($"HexBox: {HexBox.Width}, {HexBox.Height}");
 
             var doc = (sender as IBinaryDocument)!;
             switch (change.Type)
@@ -286,45 +337,7 @@ namespace AvaloniaHex.Demo.Views
 
         private void CaretOnLocationChanged(object? sender, EventArgs e) => UpdateLabels();
         private void SelectionOnRangeChanged(object? sender, EventArgs e) => UpdateLabels();
-        private void CaretOnModeChanged(object? sender, EventArgs e) => UpdateLabels();
-        private void UpdateLabels()
-        {
-            LabelBytes.IsVisible = IsLabelBytesVisible;
-            if (IsLabelBytesVisible)
-            {
-                if (HexBoxExt.Selection.Range.ByteLength > 1)
-                    LabelBytes.Text = $"Selected {HexBoxExt.Selection.Range.ByteLength} bytes [{HexBoxExt.Selection.Range.Start.ByteIndex + 1} - {HexBoxExt.Selection.Range.End.ByteIndex}]";
-                else
-                    LabelBytes.Text = $"Byte {HexBoxExt.Caret.Location.ByteIndex + 1}/{Math.Max(HexBoxExt.Document!.Length, HexBoxExt.Caret.Location.ByteIndex + 1)}";
-            }
-
-            LabelMode.IsVisible = IsLabelModeVisible;
-            if (IsLabelModeVisible)
-                LabelMode.Text = HexBoxExt.Caret.Mode == EditingMode.Insert ? "INS" : "OVR";
-        }
-
-
-        private void ConfigureContextMenu()
-        {
-            var checkBoxes = new CheckBox[]
-            {
-                MenuShowOffset, MenuShowHex, MenuShowBinary, MenuShowAscii,
-                MenuShowMode, MenuShowPosition
-            };
-
-            foreach (var cb in checkBoxes)
-                cb.IsCheckedChanged += OnMenuCheckBoxChanged;
-
-            MenuShowOffset.IsChecked = IsOffsetColumnVisible;
-            MenuShowHex.IsChecked = IsHexColumnVisible;
-            MenuShowBinary.IsChecked = IsBinaryColumnVisible;
-            MenuShowAscii.IsChecked = IsAsciiColumnVisible;
-            MenuShowMode.IsChecked = IsLabelModeVisible;
-            MenuShowPosition.IsChecked = IsLabelBytesVisible;
-
-            MenuBytesPerLine.PropertyChanged += OnMenuBytesPerLineChanged;
-            MenuBytesPerLine.Value = BytesPerLine;
-        }
+        private void CaretOnModeChanged(object? sender, EventArgs e) => UpdateLabels();          
 
         private void OnMenuCheckBoxChanged(object? sender, RoutedEventArgs e)
         {           
@@ -337,7 +350,6 @@ namespace AvaloniaHex.Demo.Views
                 {
                     case "MenuShowOffset":
                         IsOffsetColumnVisible = isChecked;
-
                         break;
 
                     case "MenuShowHex":
@@ -353,11 +365,13 @@ namespace AvaloniaHex.Demo.Views
                         break;
 
                     case "MenuShowMode":
-                        LabelMode.IsVisible = isChecked;
+                        IsLabelModeVisible = isChecked;
+                        UpdateLabels();
                         break;
 
                     case "MenuShowPosition":
-                        LabelBytes.IsVisible = isChecked;
+                        IsLabelPositionVisible = isChecked;
+                        UpdateLabels();
                         break;
 
                     default:

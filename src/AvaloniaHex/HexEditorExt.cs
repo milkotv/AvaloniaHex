@@ -86,8 +86,6 @@ public class HexEditorExt : HexEditor
     /// <inheritdoc />
     protected override void OnTextInput(TextInputEventArgs e)
     {
-        base.OnTextInput(e);
-
         // Are we in a writeable document?
         if (Document is not { IsReadOnly: false })
             return;

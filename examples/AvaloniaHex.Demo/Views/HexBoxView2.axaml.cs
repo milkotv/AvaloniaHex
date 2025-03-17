@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using AvaloniaHex.Document;
@@ -53,7 +54,6 @@ namespace AvaloniaHex.Demo.Views
             HexBox.Selection.RangeChanged += SelectionOnRangeChanged;
             HexBox.Caret.ModeChanged += CaretOnModeChanged;
             HexBox.Caret.LocationChanged += CaretOnLocationChanged;
-            HexBox.HexView.ScrollInvalidated += OnScrollInvalidated;
 
             MenuBytesPerLineAuto.PropertyChanged += OnMenuBytesPerLineChanged;
             MenuBytesPerLine.PropertyChanged += OnMenuBytesPerLineChanged;
@@ -121,7 +121,6 @@ namespace AvaloniaHex.Demo.Views
         private readonly ZeroesHighlighter _zeroesHighlighter;
         private readonly InvalidRangesHighlighter _invalidRangesHighlighter;
         private DynamicBinaryDocument? _document;
-        private Rect? _lineBounds = null;
         #endregion
 
         #region Properties
@@ -224,7 +223,7 @@ namespace AvaloniaHex.Demo.Views
 
         /// <summary>
         /// When the view is loaded
-        /// </summary>
+        /// </summary>                                          -
         /// <param name="e"></param>
         protected override void OnLoaded(RoutedEventArgs e)
         {
@@ -234,7 +233,8 @@ namespace AvaloniaHex.Demo.Views
             // Create the document first!
             UpdateText(Text);
 
-            //MenuBytesPerLine.Value = BytesPerLine ?? 8;
+            HexBox.MinHeight = HexBox.FontSize * 1.4;
+            HexBox.VerticalScrollBarVisibility = ScrollBarVisibility.Hidden;
 
             MenuShowOffset.IsChecked = IsOffsetColumnVisible;
             MenuShowHex.IsChecked = IsHexColumnVisible;
@@ -327,22 +327,7 @@ namespace AvaloniaHex.Demo.Views
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-        }
-
-        private void OnScrollInvalidated(object? sender, EventArgs e)
-        {
-            if (HexBox.IsLoaded)
-            {
-                if (sender is HexView view)
-                {
-                    Debug.Print($"Scroll invalidated. Height: {view.Extent.Height}");
-                    if (_lineBounds == null && HexBox.HexView.VisualLines.Any())
-                        _lineBounds = HexBox.HexView.VisualLines[0].Bounds;
-
-                    HexBox.HexView.Height = Math.Max(view.Extent.Height, 1) * _lineBounds!.Value.Height;
-                }
-            }
-        }
+        }       
 
         private void CaretOnLocationChanged(object? sender, EventArgs e) => UpdateLabels();
         private void SelectionOnRangeChanged(object? sender, EventArgs e) => UpdateLabels();

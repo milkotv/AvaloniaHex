@@ -14,9 +14,9 @@
 		</Style>
 	</UserControl.Styles>
 	
-	<Grid RowDefinitions="*,Auto" ColumnDefinitions="*" MinWidth="200">
+	<Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*" MinWidth="200">
 
-		<avaloniaHex:HexEditorExt MinHeight="20"
+		<avaloniaHex:HexEditorExt
 			HorizontalAlignment="Stretch"
 			VerticalAlignment="Stretch"			
 			x:Name="HexBox"

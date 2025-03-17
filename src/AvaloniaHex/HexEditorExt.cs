@@ -1,10 +1,13 @@
-﻿using Avalonia.Input;
+﻿using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using AvaloniaHex.Document;
 using AvaloniaHex.Editing;
 using AvaloniaHex.Extensions;
 using AvaloniaHex.Rendering;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 
 namespace AvaloniaHex;
 
@@ -13,12 +16,15 @@ namespace AvaloniaHex;
 /// </summary>
 public class HexEditorExt : HexEditor
 {
+    private Rect? _lineBounds;
+
     /// <summary>
     /// Creates a new empty modified hex editor.
     /// </summary>
     public HexEditorExt() : base()
     {
         AddHandler(KeyDownEvent, OnPreviewKeyDown, RoutingStrategies.Tunnel);
+        HexView.ScrollInvalidated += OnScrollInvalidated;
     }
 
     /// <summary>
@@ -109,9 +115,7 @@ public class HexEditorExt : HexEditor
                 Delete();
             }
         }
-
-        // Allow fill when > 1 b selected and not resizable
-        if (!CanResize && Selection.Range.ByteLength > 1)
+        else if(Selection.Range.ByteLength > 1)
         {
             FillSelection(e.Text);
             DoUpdateSelection(Caret.Location, false);
@@ -346,5 +350,21 @@ public class HexEditorExt : HexEditor
         base.OnGotFocus(e);
         HexView.Focus();
         e.Handled = true;
+    }
+
+    private void OnScrollInvalidated(object? sender, EventArgs e)
+    {
+        if (IsLoaded)
+        {
+            if (sender is HexView view)
+            {
+                //Debug.Print($"Scroll invalidated. Height: {view.Extent.Height}");
+                if (_lineBounds == null && HexView.VisualLines.Any())
+                    _lineBounds = HexView.VisualLines[0].Bounds;
+
+                if (_lineBounds != null)
+                    HexView.Height = Math.Max(view.Extent.Height, 1) * _lineBounds!.Value.Height;
+            }
+        }
     }
 }

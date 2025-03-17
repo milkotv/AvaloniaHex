@@ -32,4 +32,9 @@
     <ItemGroup>
         <AvaloniaResource Include="Resources\**" />
     </ItemGroup>
+    <ItemGroup>
+      <Compile Update="Views\HexBoxView.axaml.cs">
+        <DependentUpon>HexBoxView.axaml</DependentUpon>
+      </Compile>
+    </ItemGroup>
 </Project>

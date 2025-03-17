@@ -67,7 +67,7 @@
 			
 		<StackPanel Grid.Row="4">
 			<StackPanel.Styles>
-				<Style Selector="v|HexBoxView2">
+				<Style Selector="v|HexBoxView">
 					<Setter Property="IsLabelPositionVisible" Value="True"/>
 					<Setter Property="IsLabelModeVisible" Value="True"/>
 					<Setter Property="IsMenuVisible" Value="True"/>
@@ -77,21 +77,21 @@
 			<Border Width="400" BorderThickness="1" BorderBrush="{StaticResource HighlightBrush}" Margin="0,10" Padding="10" HorizontalAlignment="Left">				
 				<StackPanel HorizontalAlignment="Stretch">
 					<Label Content="Not Limited" Margin="0,10"/>
-					<v:HexBoxView2 Text="CA"/>
+					<v:HexBoxView Text="CA"/>
 				</StackPanel>
 			</Border>
 
 			<Border BorderThickness="1" BorderBrush="{StaticResource HighlightBrush}" Margin="0,10" Padding="10">
 				<StackPanel Width="300" HorizontalAlignment="Left">
 					<Label Content="Limited2 (6 bytes)" Margin="0,10"/>
-					<v:HexBoxView2 BytesNum="6" Text="CAFEB" IsLabelPositionVisible="True" IsLabelModeVisible="True"/>
+					<v:HexBoxView BytesNum="6" Text="CAFEB" IsLabelPositionVisible="True" IsLabelModeVisible="True"/>
 				</StackPanel>
 			</Border>
 
 			<Border BorderThickness="1" BorderBrush="{StaticResource HighlightBrush}" Margin="0,10" Padding="10">
 				<StackPanel Width="300" HorizontalAlignment="Left">
 					<Label Content="Limited2 (8 bytes) and Cyclic" Margin="0,10"/>
-					<v:HexBoxView2 BytesNum="8" IsCyclic="True" Text="CAFEBABE"/>
+					<v:HexBoxView BytesNum="8" IsCyclic="True" Text="CAFEBABE"/>
 				</StackPanel>
 			</Border>
 				

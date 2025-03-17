@@ -1,13 +1,10 @@
 ﻿using Avalonia;
-using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using AvaloniaHex.Document;
 using AvaloniaHex.Editing;
 using AvaloniaHex.Extensions;
 using AvaloniaHex.Rendering;
-using System.ComponentModel.DataAnnotations;
-using System.Diagnostics;
 
 namespace AvaloniaHex;
 
@@ -25,18 +22,15 @@ public class HexEditorExt : HexEditor
     {
         AddHandler(KeyDownEvent, OnPreviewKeyDown, RoutingStrategies.Tunnel);
         HexView.ScrollInvalidated += OnScrollInvalidated;
-    }
+    }    
 
     /// <summary>
     /// Gets or sets the binary document that is currently being displayed.
     /// </summary>
-    [RegularExpression("^[0-9a-fA-F]$", ErrorMessage = "FillChar must be 1 HEX character.")]
-    public string FillChar { get; set; } = "0";
-
-    /// <summary>
-    /// Gets or sets the binary document that is currently being displayed.
-    /// </summary>
-    public bool CanResize { get; set; } = true;    
+    public bool CanResize => 
+        Document != null && 
+        !Document.IsReadOnly && 
+        (Document.CanRemove || Document.CanInsert); 
 
     /// <summary>
     /// Gets or sets if (in case of !CanResize) the Caret needs to rotate to the beining if reacues the end.
@@ -200,120 +194,9 @@ public class HexEditorExt : HexEditor
                     ? EditingMode.Insert
                     : EditingMode.Overwrite;
                 e.Handled = true;
-                break;
-
-            case Key.Delete:
-                Delete();
-                e.Handled = true;
-                break;
-
-            case Key.Back:
-                Backspace();
-                e.Handled = true;
-                break;
+                break;            
         }
-    }
-
-    
-    /// <summary>
-    /// Deletes the currently selected bytes from the document.
-    /// </summary>
-    public new void Delete()
-    {
-        if (Caret.PrimaryColumn is not { } column)
-            return;
-
-        if (Document is not { CanRemove: true } document)
-            return;
-
-        var selectionRange = Selection.Range;
-        if (!CanResize)
-        {
-            if (selectionRange.ByteLength > 1)
-                FillSelection(FillChar);
-            else
-            {
-                var location = Caret.Location;
-                if (Caret.PrimaryColumn.HandleTextInput(ref location, FillChar, EditingMode.Overwrite))
-                    Caret.Location = location;
-            }
-            return;
-        }
-        else
-            document.RemoveBytes(selectionRange.Start.ByteIndex, selectionRange.ByteLength);
-
-        Caret.Location = new BitLocation(selectionRange.Start.ByteIndex, column.FirstBitIndex);
-        Selection.Range = Caret.Location.ToSingleByteRange();
-        this.SetPropertyValue<BitLocation?>("_selectionAnchorPoint", null);
-    }
-
-    /// <summary>
-    /// Deletes the currently selected bytes and the previous byte from the document.
-    /// </summary>
-    public new void Backspace()
-    {
-        if (Caret.PrimaryColumn is not { } column)
-            return;
-
-        if (Document is not { CanRemove: true } document)
-            return;
-
-        var selectionRange = Selection.Range;
-        if (!CanResize)
-        {
-            if (selectionRange.ByteLength > 1)
-            {
-                FillSelection(FillChar);
-                return;
-            }
-            else
-            {
-                var _ = Caret.Location;
-                if (!Caret.PrimaryColumn.HandleTextInput(ref _, FillChar, EditingMode.Overwrite))
-                    return;
-            }
-        }       
-
-        if (selectionRange.ByteLength <= 1)
-        {
-            if (Caret.Location.BitIndex == column.FirstBitIndex)
-            {
-                // If caret is at the left-most cell of a byte, it is more intuitive to have it remove the previous byte.
-                // In this case, we can only perform the deletion if we're not at the beginning of the document.
-                if (selectionRange.Start.ByteIndex != 0)
-                {
-                    if (CanResize)
-                    {
-                        document.RemoveBytes(selectionRange.Start.ByteIndex - 1, 1);
-                        Caret.Location = new BitLocation(selectionRange.Start.ByteIndex - 1, column.FirstBitIndex);
-                    }
-                    else
-                        Caret.Location = new BitLocation(selectionRange.Start.ByteIndex - 1, 0);
-                }
-            }
-            else
-            {
-                // If caret is not at a left-most cell of a byte, it is more intuitive to have it remove the current byte.
-                if (CanResize)
-                    document.RemoveBytes(selectionRange.Start.ByteIndex, 1);
-
-                Caret.Location = selectionRange.Start.ByteIndex == 0
-                    ? new BitLocation(0, column.FirstBitIndex)
-                    : new BitLocation(selectionRange.Start.ByteIndex, column.FirstBitIndex);
-            }
-        }
-        else
-        {
-            // Otherwise, simply treat as a normal delete.
-            if (CanResize)
-                document.RemoveBytes(selectionRange.Start.ByteIndex, selectionRange.ByteLength);
-
-            Caret.Location = new BitLocation(selectionRange.Start.ByteIndex, column.FirstBitIndex);
-        }
-
-        Selection.Range = Caret.Location.ToSingleByteRange();
-        this.SetPropertyValue<BitLocation?>("_selectionAnchorPoint", null);
-    }
+    }   
    
     private bool IsOverflow(ulong byteIndex) => 
         !CanResize && Document != null && byteIndex >= Document.ValidRanges.EnclosingRange.ByteLength;

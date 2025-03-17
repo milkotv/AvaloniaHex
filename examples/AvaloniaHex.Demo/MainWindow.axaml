@@ -84,7 +84,7 @@
 			<Border BorderThickness="1" BorderBrush="{StaticResource HighlightBrush}" Margin="0,10" Padding="10">
 				<StackPanel Width="300" HorizontalAlignment="Left">
 					<Label Content="Limited2 (6 bytes)" Margin="0,10"/>
-					<v:HexBoxView2 BytesNum="6" Text="CAFEBA" IsLabelPositionVisible="True" IsLabelModeVisible="True"/>
+					<v:HexBoxView2 BytesNum="6" Text="CAFEB" IsLabelPositionVisible="True" IsLabelModeVisible="True"/>
 				</StackPanel>
 			</Border>
 

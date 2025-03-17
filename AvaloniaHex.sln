@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.13.35825.156 d17.13
+VisualStudioVersion = 17.13.35825.156
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvaloniaHex", "src\AvaloniaHex\AvaloniaHex.csproj", "{63822CC7-0AD9-49F8-9B39-51179C82B10D}"
 EndProject
@@ -10,9 +10,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvaloniaHex.Tests", "test\AvaloniaHex.Tests\AvaloniaHex.Tests.csproj", "{5019E7CF-B71D-45B6-8B2D-DED8FF6AE50D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{6DE9F884-B751-4065-9667-30AAC94DD926}"
-	ProjectSection(SolutionItems) = preProject
-		src\AvaloniaHex\HexEditorMod.cs = src\AvaloniaHex\HexEditorMod.cs
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{3B83E6BF-6EF1-4DBC-B73E-761BB0615360}"
 EndProject

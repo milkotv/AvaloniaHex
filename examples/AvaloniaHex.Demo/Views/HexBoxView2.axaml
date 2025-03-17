@@ -16,7 +16,7 @@
 	
 	<Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*" MinWidth="200">
 
-		<avaloniaHex:HexEditorExt
+		<avaloniaHex:HexEditorExt MinHeight="17"
 			HorizontalAlignment="Stretch"
 			VerticalAlignment="Stretch"			
 			x:Name="HexBox"
